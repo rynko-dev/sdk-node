@@ -19,7 +19,7 @@ var HttpClient = class {
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${this.config.apiKey}`,
-      "User-Agent": "@renderdocs/sdk/1.0.0",
+      "User-Agent": "@renderbase/sdk/1.0.0",
       ...this.config.headers
     };
     const controller = new AbortController();
@@ -35,7 +35,7 @@ var HttpClient = class {
       const data = await response.json();
       if (!response.ok) {
         const error = data;
-        throw new RenderDocsError(
+        throw new RenderbaseError(
           error.message || `HTTP ${response.status}`,
           error.error || "ApiError",
           response.status
@@ -44,16 +44,16 @@ var HttpClient = class {
       return data;
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof RenderDocsError) {
+      if (error instanceof RenderbaseError) {
         throw error;
       }
       if (error instanceof Error) {
         if (error.name === "AbortError") {
-          throw new RenderDocsError("Request timeout", "TimeoutError", 408);
+          throw new RenderbaseError("Request timeout", "TimeoutError", 408);
         }
-        throw new RenderDocsError(error.message, "NetworkError", 0);
+        throw new RenderbaseError(error.message, "NetworkError", 0);
       }
-      throw new RenderDocsError("Unknown error", "UnknownError", 0);
+      throw new RenderbaseError("Unknown error", "UnknownError", 0);
     }
   }
   async get(path, query) {
@@ -69,10 +69,10 @@ var HttpClient = class {
     return this.request("DELETE", path);
   }
 };
-var RenderDocsError = class extends Error {
+var RenderbaseError = class extends Error {
   constructor(message, code, statusCode) {
     super(message);
-    this.name = "RenderDocsError";
+    this.name = "RenderbaseError";
     this.code = code;
     this.statusCode = statusCode;
   }
@@ -88,7 +88,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderdocs.documents.generate({
+   * const result = await renderbase.documents.generate({
    *   templateId: 'tmpl_abc123',
    *   format: 'pdf',
    *   variables: {
@@ -113,7 +113,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderdocs.documents.generatePdf({
+   * const result = await renderbase.documents.generatePdf({
    *   templateId: 'tmpl_invoice',
    *   variables: {
    *     invoiceNumber: 'INV-001',
@@ -130,7 +130,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderdocs.documents.generateExcel({
+   * const result = await renderbase.documents.generateExcel({
    *   templateId: 'tmpl_report',
    *   variables: {
    *     reportDate: '2025-01-15',
@@ -147,7 +147,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderdocs.documents.generateBatch({
+   * const result = await renderbase.documents.generateBatch({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   documents: [
@@ -170,7 +170,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const job = await renderdocs.documents.getJob('job_abc123');
+   * const job = await renderbase.documents.getJob('job_abc123');
    * console.log('Status:', job.status);
    * if (job.status === 'completed') {
    *   console.log('Download:', job.downloadUrl);
@@ -188,7 +188,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const { data, meta } = await renderdocs.documents.listJobs({
+   * const { data, meta } = await renderbase.documents.listJobs({
    *   status: 'completed',
    *   format: 'pdf',
    *   limit: 10,
@@ -219,14 +219,14 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderdocs.documents.generate({
+   * const result = await renderbase.documents.generate({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   variables: { invoiceNumber: 'INV-001' },
    * });
    *
    * // Wait for completion (polls every 1 second, max 30 seconds)
-   * const completedJob = await renderdocs.documents.waitForCompletion(result.jobId);
+   * const completedJob = await renderbase.documents.waitForCompletion(result.jobId);
    * console.log('Download URL:', completedJob.downloadUrl);
    * ```
    */
@@ -257,14 +257,14 @@ var TemplatesResource = class {
    *
    * @example
    * ```typescript
-   * const template = await renderdocs.templates.get('tmpl_abc123');
+   * const template = await renderbase.templates.get('tmpl_abc123');
    * console.log('Template:', template.name);
    * console.log('Variables:', template.variables);
    * ```
    */
   async get(id) {
     const response = await this.http.get(
-      `/api/v1/templates/${id}`
+      `/api/templates/attachment/${id}`
     );
     return response.data;
   }
@@ -274,15 +274,15 @@ var TemplatesResource = class {
    * @example
    * ```typescript
    * // List all PDF templates
-   * const { data } = await renderdocs.templates.list({ type: 'pdf' });
+   * const { data } = await renderbase.templates.list({ type: 'pdf' });
    *
    * // List all Excel templates
-   * const { data: excelTemplates } = await renderdocs.templates.list({ type: 'excel' });
+   * const { data: excelTemplates } = await renderbase.templates.list({ type: 'excel' });
    * ```
    */
   async list(options = {}) {
     const response = await this.http.get(
-      "/api/v1/templates",
+      "/api/templates/attachment",
       {
         type: options.type,
         limit: options.limit,
@@ -299,7 +299,7 @@ var TemplatesResource = class {
    *
    * @example
    * ```typescript
-   * const { data } = await renderdocs.templates.listPdf();
+   * const { data } = await renderbase.templates.listPdf();
    * ```
    */
   async listPdf(options = {}) {
@@ -310,7 +310,7 @@ var TemplatesResource = class {
    *
    * @example
    * ```typescript
-   * const { data } = await renderdocs.templates.listExcel();
+   * const { data } = await renderbase.templates.listExcel();
    * ```
    */
   async listExcel(options = {}) {
@@ -328,8 +328,8 @@ var WebhooksResource = class {
    *
    * @example
    * ```typescript
-   * const webhook = await renderdocs.webhooks.create({
-   *   url: 'https://your-app.com/webhooks/renderdocs',
+   * const webhook = await renderbase.webhooks.create({
+   *   url: 'https://your-app.com/webhooks/renderbase',
    *   events: ['document.completed', 'document.failed', 'batch.completed'],
    *   name: 'My Webhook',
    * });
@@ -349,7 +349,7 @@ var WebhooksResource = class {
    *
    * @example
    * ```typescript
-   * const webhook = await renderdocs.webhooks.get('wh_abc123');
+   * const webhook = await renderbase.webhooks.get('wh_abc123');
    * console.log('Events:', webhook.events);
    * ```
    */
@@ -364,7 +364,7 @@ var WebhooksResource = class {
    *
    * @example
    * ```typescript
-   * const { data } = await renderdocs.webhooks.list();
+   * const { data } = await renderbase.webhooks.list();
    * console.log('Active webhooks:', data.filter(w => w.active).length);
    * ```
    */
@@ -382,7 +382,7 @@ var WebhooksResource = class {
    *
    * @example
    * ```typescript
-   * await renderdocs.webhooks.delete('wh_abc123');
+   * await renderbase.webhooks.delete('wh_abc123');
    * console.log('Webhook deleted');
    * ```
    */
@@ -394,7 +394,7 @@ var WebhooksResource = class {
    *
    * @example
    * ```typescript
-   * const updated = await renderdocs.webhooks.update('wh_abc123', {
+   * const updated = await renderbase.webhooks.update('wh_abc123', {
    *   events: ['document.completed', 'document.failed'],
    *   active: true,
    * });
@@ -410,22 +410,22 @@ var WebhooksResource = class {
 };
 
 // src/client.ts
-var DEFAULT_BASE_URL = "https://api.renderdocs.com";
+var DEFAULT_BASE_URL = "https://api.renderbase.dev";
 var DEFAULT_TIMEOUT = 3e4;
-var RenderDocs = class {
+var Renderbase = class {
   /**
-   * Create a new RenderDocs client
+   * Create a new Renderbase client
    *
    * @example
    * ```typescript
-   * import { RenderDocs } from '@renderdocs/sdk';
+   * import { Renderbase } from '@renderbase/sdk';
    *
-   * const renderdocs = new RenderDocs({
-   *   apiKey: process.env.RENDERDOCS_API_KEY!,
+   * const renderbase = new Renderbase({
+   *   apiKey: process.env.RENDERBASE_API_KEY!,
    * });
    *
    * // Generate a PDF
-   * const result = await renderdocs.documents.generate({
+   * const result = await renderbase.documents.generate({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   variables: { invoiceNumber: 'INV-001' },
@@ -451,7 +451,7 @@ var RenderDocs = class {
    *
    * @example
    * ```typescript
-   * const user = await renderdocs.me();
+   * const user = await renderbase.me();
    * console.log('Authenticated as:', user.email);
    * ```
    */
@@ -464,7 +464,7 @@ var RenderDocs = class {
    *
    * @example
    * ```typescript
-   * const isValid = await renderdocs.verifyApiKey();
+   * const isValid = await renderbase.verifyApiKey();
    * if (!isValid) {
    *   throw new Error('Invalid API key');
    * }
@@ -480,7 +480,7 @@ var RenderDocs = class {
   }
 };
 function createClient(config) {
-  return new RenderDocs(config);
+  return new Renderbase(config);
 }
 
 // src/utils/webhooks.ts
@@ -537,8 +537,8 @@ var WebhookSignatureError = class extends Error {
 };
 export {
   DocumentsResource,
-  RenderDocs,
-  RenderDocsError,
+  Renderbase,
+  RenderbaseError,
   TemplatesResource,
   WebhookSignatureError,
   WebhooksResource,

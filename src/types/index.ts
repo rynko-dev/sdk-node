@@ -153,6 +153,8 @@ export interface ListDocumentJobsOptions {
   dateTo?: string | Date;
   /** Number of results per page (default: 20) */
   limit?: number;
+  /** Page number (default: 1) */
+  page?: number;
   /** Offset for pagination */
   offset?: number;
 }

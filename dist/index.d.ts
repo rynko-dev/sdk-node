@@ -1,5 +1,5 @@
 /**
- * HTTP Client for RenderDocs SDK
+ * HTTP Client for Renderbase SDK
  */
 interface HttpClientConfig {
     baseUrl: string;
@@ -16,19 +16,19 @@ declare class HttpClient {
     put<T>(path: string, body?: unknown): Promise<T>;
     delete<T>(path: string): Promise<T>;
 }
-declare class RenderDocsError extends Error {
+declare class RenderbaseError extends Error {
     code: string;
     statusCode: number;
     constructor(message: string, code: string, statusCode: number);
 }
 
 /**
- * RenderDocs SDK Types
+ * Renderbase SDK Types
  */
-interface RenderDocsConfig {
+interface RenderbaseConfig {
     /** API Key for authentication */
     apiKey: string;
-    /** Base URL for the API (default: https://api.renderdocs.com) */
+    /** Base URL for the API (default: https://api.renderbase.dev) */
     baseUrl?: string;
     /** Request timeout in milliseconds (default: 30000) */
     timeout?: number;
@@ -39,100 +39,118 @@ interface GenerateDocumentOptions {
     /** Template ID to use */
     templateId: string;
     /** Output format */
-    format: 'pdf' | 'excel';
+    format: 'pdf' | 'excel' | 'csv';
     /** Template variables for content generation */
     variables?: Record<string, unknown>;
+    /** Custom filename (without extension) */
+    filename?: string;
     /** Webhook URL to receive completion notification */
     webhookUrl?: string;
-    /** Secret for webhook signature verification */
-    webhookSecret?: string;
     /** Custom metadata to pass through to webhook */
     metadata?: Record<string, unknown>;
+    /** Use draft version instead of published version (for testing) */
+    useDraft?: boolean;
+    /** Force use of purchased credits instead of free quota */
+    useCredit?: boolean;
 }
 interface GenerateBatchOptions {
     /** Template ID to use */
     templateId: string;
     /** Output format */
-    format: 'pdf' | 'excel';
-    /** List of documents to generate */
-    documents: BatchDocument[];
+    format: 'pdf' | 'excel' | 'csv';
+    /** List of variable sets (one per document) - each object contains the variables for that document */
+    documents: Record<string, unknown>[];
     /** Webhook URL to receive batch completion notification */
     webhookUrl?: string;
-    /** Secret for webhook signature verification */
-    webhookSecret?: string;
-}
-interface BatchDocument {
-    /** Template variables for this document */
-    variables?: Record<string, unknown>;
-    /** Custom metadata for this document */
+    /** Custom metadata for the batch */
     metadata?: Record<string, unknown>;
+    /** Use draft version instead of published version (for testing) */
+    useDraft?: boolean;
+    /** Force use of purchased credits instead of free quota */
+    useCredit?: boolean;
 }
+/**
+ * Response from document generation request.
+ * Note: This is an async operation - the document is queued for generation.
+ * Use `waitForCompletion()` or poll `getJob()` to get the downloadUrl once ready.
+ */
 interface GenerateDocumentResponse {
     /** Job ID for tracking */
     jobId: string;
-    /** Job status */
+    /** Job status (will be 'queued' for new requests) */
     status: DocumentJobStatus;
-    /** Signed download URL (available when completed) */
-    downloadUrl?: string;
-    /** URL expiration time */
-    expiresAt?: string;
-    /** Created timestamp */
-    createdAt: string;
+    /** URL to check job status */
+    statusUrl: string;
+    /** Estimated wait time in seconds */
+    estimatedWaitSeconds: number;
 }
+/**
+ * Response from batch document generation request.
+ * Note: This is an async operation - documents are queued for generation.
+ * Use `getBatch()` to poll for completion status.
+ */
 interface GenerateBatchResponse {
     /** Batch ID for tracking */
     batchId: string;
-    /** Batch status */
+    /** Batch status (will be 'queued' for new requests) */
     status: string;
-    /** Total documents in batch */
-    totalDocuments: number;
-    /** Number of completed documents */
-    completed: number;
-    /** Number of failed documents */
-    failed: number;
-    /** Created timestamp */
-    createdAt: string;
+    /** Total jobs in batch */
+    totalJobs: number;
+    /** URL to check batch status */
+    statusUrl: string;
+    /** Estimated wait time in seconds */
+    estimatedWaitSeconds: number;
 }
 interface DocumentJob {
     /** Job ID */
-    id: string;
+    jobId: string;
     /** Job status */
     status: DocumentJobStatus;
     /** Output format */
-    format: 'pdf' | 'excel';
+    format: 'pdf' | 'excel' | 'csv';
     /** Template ID used */
     templateId: string;
     /** Template name */
     templateName?: string;
+    /** Custom filename */
+    filename?: string;
     /** Signed download URL (available when completed) */
     downloadUrl?: string;
-    /** URL expiration time */
-    expiresAt?: string;
+    /** When download URL expires */
+    downloadUrlExpiresAt?: string;
     /** File size in bytes */
     fileSize?: number;
-    /** Processing duration in milliseconds */
-    duration?: number;
     /** Error message (if failed) */
-    error?: string;
+    errorMessage?: string;
+    /** Error code (if failed) */
+    errorCode?: string;
     /** Custom metadata */
     metadata?: Record<string, unknown>;
-    /** Started timestamp */
-    startedAt?: string;
-    /** Completed timestamp */
-    completedAt?: string;
+    /** Whether a webhook was configured for this job */
+    hasWebhook?: boolean;
+    /** Whether webhook was successfully delivered */
+    webhookSent?: boolean;
+    /** Webhook delivery error if failed */
+    webhookError?: string;
     /** Created timestamp */
     createdAt: string;
-    /** Updated timestamp */
-    updatedAt: string;
+    /** When processing started */
+    processingAt?: string;
+    /** Completed timestamp */
+    completedAt?: string;
+    /** When file expires from storage */
+    expiresAt?: string;
 }
 type DocumentJobStatus = 'queued' | 'processing' | 'completed' | 'failed';
 interface ListDocumentJobsOptions {
     /** Filter by status */
     status?: DocumentJobStatus;
     /** Filter by format */
-    format?: 'pdf' | 'excel';
+    format?: 'pdf' | 'excel' | 'csv';
     /** Filter by template ID */
     templateId?: string;
+    /** Filter by workspace ID */
+    workspaceId?: string;
     /** Filter by date range start */
     dateFrom?: string | Date;
     /** Filter by date range end */
@@ -141,6 +159,8 @@ interface ListDocumentJobsOptions {
     limit?: number;
     /** Page number (default: 1) */
     page?: number;
+    /** Offset for pagination */
+    offset?: number;
 }
 interface Template {
     id: string;
@@ -213,6 +233,8 @@ interface User {
     name?: string;
     teamId?: string;
     teamName?: string;
+    workspaceId?: string;
+    workspaceName?: string;
 }
 
 /**
@@ -227,7 +249,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderdocs.documents.generate({
+     * const result = await renderbase.documents.generate({
      *   templateId: 'tmpl_abc123',
      *   format: 'pdf',
      *   variables: {
@@ -246,7 +268,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderdocs.documents.generatePdf({
+     * const result = await renderbase.documents.generatePdf({
      *   templateId: 'tmpl_invoice',
      *   variables: {
      *     invoiceNumber: 'INV-001',
@@ -261,7 +283,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderdocs.documents.generateExcel({
+     * const result = await renderbase.documents.generateExcel({
      *   templateId: 'tmpl_report',
      *   variables: {
      *     reportDate: '2025-01-15',
@@ -276,7 +298,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderdocs.documents.generateBatch({
+     * const result = await renderbase.documents.generateBatch({
      *   templateId: 'tmpl_invoice',
      *   format: 'pdf',
      *   documents: [
@@ -293,7 +315,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const job = await renderdocs.documents.getJob('job_abc123');
+     * const job = await renderbase.documents.getJob('job_abc123');
      * console.log('Status:', job.status);
      * if (job.status === 'completed') {
      *   console.log('Download:', job.downloadUrl);
@@ -306,7 +328,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const { data, meta } = await renderdocs.documents.listJobs({
+     * const { data, meta } = await renderbase.documents.listJobs({
      *   status: 'completed',
      *   format: 'pdf',
      *   limit: 10,
@@ -323,14 +345,14 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderdocs.documents.generate({
+     * const result = await renderbase.documents.generate({
      *   templateId: 'tmpl_invoice',
      *   format: 'pdf',
      *   variables: { invoiceNumber: 'INV-001' },
      * });
      *
      * // Wait for completion (polls every 1 second, max 30 seconds)
-     * const completedJob = await renderdocs.documents.waitForCompletion(result.jobId);
+     * const completedJob = await renderbase.documents.waitForCompletion(result.jobId);
      * console.log('Download URL:', completedJob.downloadUrl);
      * ```
      */
@@ -352,7 +374,7 @@ declare class TemplatesResource {
      *
      * @example
      * ```typescript
-     * const template = await renderdocs.templates.get('tmpl_abc123');
+     * const template = await renderbase.templates.get('tmpl_abc123');
      * console.log('Template:', template.name);
      * console.log('Variables:', template.variables);
      * ```
@@ -364,10 +386,10 @@ declare class TemplatesResource {
      * @example
      * ```typescript
      * // List all PDF templates
-     * const { data } = await renderdocs.templates.list({ type: 'pdf' });
+     * const { data } = await renderbase.templates.list({ type: 'pdf' });
      *
      * // List all Excel templates
-     * const { data: excelTemplates } = await renderdocs.templates.list({ type: 'excel' });
+     * const { data: excelTemplates } = await renderbase.templates.list({ type: 'excel' });
      * ```
      */
     list(options?: ListTemplatesOptions): Promise<{
@@ -379,7 +401,7 @@ declare class TemplatesResource {
      *
      * @example
      * ```typescript
-     * const { data } = await renderdocs.templates.listPdf();
+     * const { data } = await renderbase.templates.listPdf();
      * ```
      */
     listPdf(options?: Omit<ListTemplatesOptions, 'type'>): Promise<{
@@ -391,7 +413,7 @@ declare class TemplatesResource {
      *
      * @example
      * ```typescript
-     * const { data } = await renderdocs.templates.listExcel();
+     * const { data } = await renderbase.templates.listExcel();
      * ```
      */
     listExcel(options?: Omit<ListTemplatesOptions, 'type'>): Promise<{
@@ -412,8 +434,8 @@ declare class WebhooksResource {
      *
      * @example
      * ```typescript
-     * const webhook = await renderdocs.webhooks.create({
-     *   url: 'https://your-app.com/webhooks/renderdocs',
+     * const webhook = await renderbase.webhooks.create({
+     *   url: 'https://your-app.com/webhooks/renderbase',
      *   events: ['document.completed', 'document.failed', 'batch.completed'],
      *   name: 'My Webhook',
      * });
@@ -427,7 +449,7 @@ declare class WebhooksResource {
      *
      * @example
      * ```typescript
-     * const webhook = await renderdocs.webhooks.get('wh_abc123');
+     * const webhook = await renderbase.webhooks.get('wh_abc123');
      * console.log('Events:', webhook.events);
      * ```
      */
@@ -437,7 +459,7 @@ declare class WebhooksResource {
      *
      * @example
      * ```typescript
-     * const { data } = await renderdocs.webhooks.list();
+     * const { data } = await renderbase.webhooks.list();
      * console.log('Active webhooks:', data.filter(w => w.active).length);
      * ```
      */
@@ -450,7 +472,7 @@ declare class WebhooksResource {
      *
      * @example
      * ```typescript
-     * await renderdocs.webhooks.delete('wh_abc123');
+     * await renderbase.webhooks.delete('wh_abc123');
      * console.log('Webhook deleted');
      * ```
      */
@@ -460,7 +482,7 @@ declare class WebhooksResource {
      *
      * @example
      * ```typescript
-     * const updated = await renderdocs.webhooks.update('wh_abc123', {
+     * const updated = await renderbase.webhooks.update('wh_abc123', {
      *   events: ['document.completed', 'document.failed'],
      *   active: true,
      * });
@@ -472,10 +494,10 @@ declare class WebhooksResource {
 }
 
 /**
- * RenderDocs SDK Client
+ * Renderbase SDK Client
  */
 
-declare class RenderDocs {
+declare class Renderbase {
     private http;
     /** Document generation operations */
     documents: DocumentsResource;
@@ -484,31 +506,31 @@ declare class RenderDocs {
     /** Webhook operations */
     webhooks: WebhooksResource;
     /**
-     * Create a new RenderDocs client
+     * Create a new Renderbase client
      *
      * @example
      * ```typescript
-     * import { RenderDocs } from '@renderdocs/sdk';
+     * import { Renderbase } from '@renderbase/sdk';
      *
-     * const renderdocs = new RenderDocs({
-     *   apiKey: process.env.RENDERDOC_API_KEY!,
+     * const renderbase = new Renderbase({
+     *   apiKey: process.env.RENDERBASE_API_KEY!,
      * });
      *
      * // Generate a PDF
-     * const result = await renderdocs.documents.generate({
+     * const result = await renderbase.documents.generate({
      *   templateId: 'tmpl_invoice',
      *   format: 'pdf',
      *   variables: { invoiceNumber: 'INV-001' },
      * });
      * ```
      */
-    constructor(config: RenderDocsConfig);
+    constructor(config: RenderbaseConfig);
     /**
      * Get the current authenticated user
      *
      * @example
      * ```typescript
-     * const user = await renderdocs.me();
+     * const user = await renderbase.me();
      * console.log('Authenticated as:', user.email);
      * ```
      */
@@ -518,7 +540,7 @@ declare class RenderDocs {
      *
      * @example
      * ```typescript
-     * const isValid = await renderdocs.verifyApiKey();
+     * const isValid = await renderbase.verifyApiKey();
      * if (!isValid) {
      *   throw new Error('Invalid API key');
      * }
@@ -527,18 +549,18 @@ declare class RenderDocs {
     verifyApiKey(): Promise<boolean>;
 }
 /**
- * Create a RenderDocs client
+ * Create a Renderbase client
  *
  * @example
  * ```typescript
- * import { createClient } from '@renderdocs/sdk';
+ * import { createClient } from '@renderbase/sdk';
  *
- * const renderdocs = createClient({
- *   apiKey: process.env.RENDERDOC_API_KEY!,
+ * const renderbase = createClient({
+ *   apiKey: process.env.RENDERBASE_API_KEY!,
  * });
  * ```
  */
-declare function createClient(config: RenderDocsConfig): RenderDocs;
+declare function createClient(config: RenderbaseConfig): Renderbase;
 
 /**
  * Webhook Signature Verification Utilities
@@ -547,7 +569,7 @@ declare function createClient(config: RenderDocsConfig): RenderDocs;
 interface VerifyWebhookOptions {
     /** Raw request body as string */
     payload: string;
-    /** Signature from X-RenderDocs-Signature header */
+    /** Signature from X-Renderbase-Signature header */
     signature: string;
     /** Webhook secret from your subscription */
     secret: string;
@@ -571,10 +593,10 @@ declare function computeSignature(timestamp: number, payload: string, secret: st
  *
  * @example
  * ```typescript
- * import { verifyWebhookSignature } from '@renderdocs/sdk';
+ * import { verifyWebhookSignature } from '@renderbase/sdk';
  *
- * app.post('/webhooks/renderdocs', (req, res) => {
- *   const signature = req.headers['x-renderdocs-signature'];
+ * app.post('/webhooks/renderbase', (req, res) => {
+ *   const signature = req.headers['x-renderbase-signature'];
  *
  *   try {
  *     const event = verifyWebhookSignature({
@@ -598,4 +620,4 @@ declare class WebhookSignatureError extends Error {
     constructor(message: string);
 }
 
-export { type ApiError, type ApiResponse, type BatchDocument, type CreateWebhookOptions, type DocumentJob, type DocumentJobStatus, DocumentsResource, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListDocumentJobsOptions, type ListTemplatesOptions, type PaginationMeta, RenderDocs, type RenderDocsConfig, RenderDocsError, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };
+export { type ApiError, type ApiResponse, type CreateWebhookOptions, type DocumentJob, type DocumentJobStatus, DocumentsResource, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListDocumentJobsOptions, type ListTemplatesOptions, type PaginationMeta, Renderbase, type RenderbaseConfig, RenderbaseError, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };

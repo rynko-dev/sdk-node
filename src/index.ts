@@ -63,7 +63,6 @@ export type {
   // Document types
   GenerateDocumentOptions,
   GenerateBatchOptions,
-  BatchDocument,
   GenerateDocumentResponse,
   GenerateBatchResponse,
   DocumentJob,
