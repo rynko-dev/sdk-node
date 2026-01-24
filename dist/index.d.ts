@@ -14,6 +14,7 @@ declare class HttpClient {
     get<T>(path: string, query?: Record<string, unknown>): Promise<T>;
     post<T>(path: string, body?: unknown): Promise<T>;
     put<T>(path: string, body?: unknown): Promise<T>;
+    patch<T>(path: string, body?: unknown): Promise<T>;
     delete<T>(path: string): Promise<T>;
 }
 declare class RenderbaseError extends Error {
@@ -189,20 +190,20 @@ interface WebhookSubscription {
     id: string;
     url: string;
     events: WebhookEventType[];
-    name?: string;
-    active: boolean;
+    description?: string;
+    isActive: boolean;
     secret?: string;
     createdAt: string;
     updatedAt: string;
 }
-type WebhookEventType = 'document.completed' | 'document.failed' | 'batch.completed';
+type WebhookEventType = 'document.generated' | 'document.failed' | 'document.downloaded';
 interface CreateWebhookOptions {
     /** URL to receive webhook events */
     url: string;
     /** Event types to subscribe to */
     events: WebhookEventType[];
-    /** Webhook name (optional) */
-    name?: string;
+    /** Webhook description (optional) */
+    description?: string;
 }
 interface WebhookEvent {
     id: string;
@@ -436,8 +437,8 @@ declare class WebhooksResource {
      * ```typescript
      * const webhook = await renderbase.webhooks.create({
      *   url: 'https://your-app.com/webhooks/renderbase',
-     *   events: ['document.completed', 'document.failed', 'batch.completed'],
-     *   name: 'My Webhook',
+     *   events: ['document.generated', 'document.failed'],
+     *   description: 'My Webhook',
      * });
      * console.log('Webhook ID:', webhook.id);
      * console.log('Secret:', webhook.secret); // Save this for verification!
@@ -483,13 +484,13 @@ declare class WebhooksResource {
      * @example
      * ```typescript
      * const updated = await renderbase.webhooks.update('wh_abc123', {
-     *   events: ['document.completed', 'document.failed'],
-     *   active: true,
+     *   events: ['document.generated', 'document.failed'],
+     *   isActive: true,
      * });
      * ```
      */
     update(id: string, options: Partial<CreateWebhookOptions> & {
-        active?: boolean;
+        isActive?: boolean;
     }): Promise<WebhookSubscription>;
 }
 

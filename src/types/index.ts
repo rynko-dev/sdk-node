@@ -197,25 +197,25 @@ export interface WebhookSubscription {
   id: string;
   url: string;
   events: WebhookEventType[];
-  name?: string;
-  active: boolean;
+  description?: string;
+  isActive: boolean;
   secret?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export type WebhookEventType =
-  | 'document.completed'
+  | 'document.generated'
   | 'document.failed'
-  | 'batch.completed';
+  | 'document.downloaded';
 
 export interface CreateWebhookOptions {
   /** URL to receive webhook events */
   url: string;
   /** Event types to subscribe to */
   events: WebhookEventType[];
-  /** Webhook name (optional) */
-  name?: string;
+  /** Webhook description (optional) */
+  description?: string;
 }
 
 export interface WebhookEvent {

@@ -264,8 +264,8 @@ async function runTests(): Promise<void> {
   await test('webhooks.create() - Create webhook subscription', async () => {
     const webhook = await client.webhooks.create({
       url: 'https://webhook.site/test-renderbase-sdk',
-      events: ['document.completed', 'document.failed'],
-      name: 'SDK Integration Test Webhook',
+      events: ['document.generated', 'document.failed'],
+      description: 'SDK Integration Test Webhook',
     });
 
     if (!webhook.id || !webhook.secret) {
@@ -288,12 +288,12 @@ async function runTests(): Promise<void> {
 
     await test('webhooks.update() - Update webhook', async () => {
       const webhook = await client.webhooks.update(webhookId!, {
-        name: 'SDK Integration Test Webhook (Updated)',
+        description: 'SDK Integration Test Webhook (Updated)',
       });
       if (!webhook.id) {
         throw new Error('Invalid webhook response');
       }
-      console.log(`  Updated name: ${webhook.name}`);
+      console.log(`  Updated description: ${webhook.description}`);
     });
 
     await test('webhooks.delete() - Delete webhook', async () => {

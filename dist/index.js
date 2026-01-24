@@ -100,6 +100,9 @@ var HttpClient = class {
   async put(path, body) {
     return this.request("PUT", path, { body });
   }
+  async patch(path, body) {
+    return this.request("PATCH", path, { body });
+  }
   async delete(path) {
     return this.request("DELETE", path);
   }
@@ -365,8 +368,8 @@ var WebhooksResource = class {
    * ```typescript
    * const webhook = await renderbase.webhooks.create({
    *   url: 'https://your-app.com/webhooks/renderbase',
-   *   events: ['document.completed', 'document.failed', 'batch.completed'],
-   *   name: 'My Webhook',
+   *   events: ['document.generated', 'document.failed'],
+   *   description: 'My Webhook',
    * });
    * console.log('Webhook ID:', webhook.id);
    * console.log('Secret:', webhook.secret); // Save this for verification!
@@ -430,13 +433,13 @@ var WebhooksResource = class {
    * @example
    * ```typescript
    * const updated = await renderbase.webhooks.update('wh_abc123', {
-   *   events: ['document.completed', 'document.failed'],
-   *   active: true,
+   *   events: ['document.generated', 'document.failed'],
+   *   isActive: true,
    * });
    * ```
    */
   async update(id, options) {
-    const response = await this.http.put(
+    const response = await this.http.patch(
       `/api/v1/webhook-subscriptions/${id}`,
       options
     );
@@ -491,7 +494,7 @@ var Renderbase = class {
    * ```
    */
   async me() {
-    const response = await this.http.get("/api/v1/me");
+    const response = await this.http.get("/api/auth/verify");
     return response.data;
   }
   /**

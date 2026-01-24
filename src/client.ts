@@ -69,7 +69,7 @@ export class Renderbase {
    * ```
    */
   async me(): Promise<User> {
-    const response = await this.http.get<ApiResponse<User>>('/api/v1/me');
+    const response = await this.http.get<ApiResponse<User>>('/api/auth/verify');
     return response.data;
   }
 

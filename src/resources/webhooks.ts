@@ -20,8 +20,8 @@ export class WebhooksResource {
    * ```typescript
    * const webhook = await renderbase.webhooks.create({
    *   url: 'https://your-app.com/webhooks/renderbase',
-   *   events: ['document.completed', 'document.failed', 'batch.completed'],
-   *   name: 'My Webhook',
+   *   events: ['document.generated', 'document.failed'],
+   *   description: 'My Webhook',
    * });
    * console.log('Webhook ID:', webhook.id);
    * console.log('Secret:', webhook.secret); // Save this for verification!
@@ -90,16 +90,16 @@ export class WebhooksResource {
    * @example
    * ```typescript
    * const updated = await renderbase.webhooks.update('wh_abc123', {
-   *   events: ['document.completed', 'document.failed'],
-   *   active: true,
+   *   events: ['document.generated', 'document.failed'],
+   *   isActive: true,
    * });
    * ```
    */
   async update(
     id: string,
-    options: Partial<CreateWebhookOptions> & { active?: boolean }
+    options: Partial<CreateWebhookOptions> & { isActive?: boolean }
   ): Promise<WebhookSubscription> {
-    const response = await this.http.put<ApiResponse<WebhookSubscription>>(
+    const response = await this.http.patch<ApiResponse<WebhookSubscription>>(
       `/api/v1/webhook-subscriptions/${id}`,
       options
     );
