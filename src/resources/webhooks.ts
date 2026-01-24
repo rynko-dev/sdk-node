@@ -4,7 +4,6 @@
 
 import type { HttpClient } from '../utils/http';
 import type {
-  ApiResponse,
   WebhookSubscription,
   CreateWebhookOptions,
   PaginationMeta,
@@ -28,11 +27,11 @@ export class WebhooksResource {
    * ```
    */
   async create(options: CreateWebhookOptions): Promise<WebhookSubscription> {
-    const response = await this.http.post<ApiResponse<WebhookSubscription>>(
+    // Backend returns webhook directly (not wrapped)
+    return this.http.post<WebhookSubscription>(
       '/api/v1/webhook-subscriptions',
       options
     );
-    return response.data;
   }
 
   /**
@@ -45,10 +44,10 @@ export class WebhooksResource {
    * ```
    */
   async get(id: string): Promise<WebhookSubscription> {
-    const response = await this.http.get<ApiResponse<WebhookSubscription>>(
+    // Backend returns webhook directly (not wrapped)
+    return this.http.get<WebhookSubscription>(
       `/api/v1/webhook-subscriptions/${id}`
     );
-    return response.data;
   }
 
   /**
@@ -57,17 +56,23 @@ export class WebhooksResource {
    * @example
    * ```typescript
    * const { data } = await renderbase.webhooks.list();
-   * console.log('Active webhooks:', data.filter(w => w.active).length);
+   * console.log('Active webhooks:', data.filter(w => w.isActive).length);
    * ```
    */
   async list(): Promise<{ data: WebhookSubscription[]; meta: PaginationMeta }> {
-    const response = await this.http.get<ApiResponse<WebhookSubscription[]>>(
+    // Backend returns { data: [], total: number }
+    const response = await this.http.get<{ data: WebhookSubscription[]; total: number }>(
       '/api/v1/webhook-subscriptions'
     );
 
     return {
       data: response.data,
-      meta: response.meta!,
+      meta: {
+        total: response.total,
+        page: 1,
+        limit: response.data.length,
+        totalPages: 1,
+      },
     };
   }
 
@@ -99,10 +104,10 @@ export class WebhooksResource {
     id: string,
     options: Partial<CreateWebhookOptions> & { isActive?: boolean }
   ): Promise<WebhookSubscription> {
-    const response = await this.http.patch<ApiResponse<WebhookSubscription>>(
+    // Backend returns webhook directly (not wrapped)
+    return this.http.patch<WebhookSubscription>(
       `/api/v1/webhook-subscriptions/${id}`,
       options
     );
-    return response.data;
   }
 }

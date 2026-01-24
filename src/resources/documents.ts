@@ -4,7 +4,6 @@
 
 import type { HttpClient } from '../utils/http';
 import type {
-  ApiResponse,
   DocumentJob,
   GenerateDocumentOptions,
   GenerateDocumentResponse,
@@ -36,11 +35,11 @@ export class DocumentsResource {
    * ```
    */
   async generate(options: GenerateDocumentOptions): Promise<GenerateDocumentResponse> {
-    const response = await this.http.post<ApiResponse<GenerateDocumentResponse>>(
+    // Backend returns response directly (not wrapped)
+    return this.http.post<GenerateDocumentResponse>(
       '/api/v1/documents/generate',
       options
     );
-    return response.data;
   }
 
   /**
@@ -100,11 +99,11 @@ export class DocumentsResource {
    * ```
    */
   async generateBatch(options: GenerateBatchOptions): Promise<GenerateBatchResponse> {
-    const response = await this.http.post<ApiResponse<GenerateBatchResponse>>(
+    // Backend returns response directly (not wrapped)
+    return this.http.post<GenerateBatchResponse>(
       '/api/v1/documents/generate/batch',
       options
     );
-    return response.data;
   }
 
   /**
@@ -120,10 +119,8 @@ export class DocumentsResource {
    * ```
    */
   async getJob(jobId: string): Promise<DocumentJob> {
-    const response = await this.http.get<ApiResponse<DocumentJob>>(
-      `/api/v1/documents/jobs/${jobId}`
-    );
-    return response.data;
+    // Backend returns job directly (not wrapped)
+    return this.http.get<DocumentJob>(`/api/v1/documents/jobs/${jobId}`);
   }
 
   /**
@@ -133,7 +130,6 @@ export class DocumentsResource {
    * ```typescript
    * const { data, meta } = await renderbase.documents.listJobs({
    *   status: 'completed',
-   *   format: 'pdf',
    *   limit: 10,
    * });
    * console.log(`Found ${meta.total} jobs`);
@@ -142,22 +138,29 @@ export class DocumentsResource {
   async listJobs(
     options: ListDocumentJobsOptions = {}
   ): Promise<{ data: DocumentJob[]; meta: PaginationMeta }> {
-    const response = await this.http.get<ApiResponse<DocumentJob[]>>(
+    // Backend returns { jobs: [], total: number }
+    const response = await this.http.get<{ jobs: DocumentJob[]; total: number }>(
       '/api/v1/documents/jobs',
       {
         status: options.status,
-        format: options.format,
         templateId: options.templateId,
-        dateFrom: options.dateFrom,
-        dateTo: options.dateTo,
+        workspaceId: options.workspaceId,
         limit: options.limit,
-        page: options.page,
+        offset: options.offset ?? ((options.page ?? 1) - 1) * (options.limit ?? 20),
       }
     );
 
+    const limit = options.limit ?? 20;
+    const page = options.page ?? 1;
+
     return {
-      data: response.data,
-      meta: response.meta!,
+      data: response.jobs,
+      meta: {
+        total: response.total,
+        page,
+        limit,
+        totalPages: Math.ceil(response.total / limit),
+      },
     };
   }
 

@@ -69,8 +69,8 @@ export class Renderbase {
    * ```
    */
   async me(): Promise<User> {
-    const response = await this.http.get<ApiResponse<User>>('/api/auth/verify');
-    return response.data;
+    // Backend returns user object directly (not wrapped in { data: ... })
+    return this.http.get<User>('/api/auth/verify');
   }
 
   /**

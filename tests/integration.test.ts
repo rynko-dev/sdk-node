@@ -114,8 +114,8 @@ async function runTests(): Promise<void> {
     }
   });
 
-  await test('templates.list({ type: "pdf" }) - Filter by type', async () => {
-    const response = await client.templates.list({ type: 'pdf' });
+  await test('templates.listPdf() - Filter PDF templates', async () => {
+    const response = await client.templates.listPdf();
     if (!Array.isArray(response.data)) {
       throw new Error('Expected array of templates');
     }

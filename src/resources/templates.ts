@@ -4,11 +4,18 @@
 
 import type { HttpClient } from '../utils/http';
 import type {
-  ApiResponse,
   Template,
   ListTemplatesOptions,
   PaginationMeta,
 } from '../types';
+
+interface TemplateListResponse {
+  data: Template[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 export class TemplatesResource {
   constructor(private http: HttpClient) {}
@@ -24,10 +31,8 @@ export class TemplatesResource {
    * ```
    */
   async get(id: string): Promise<Template> {
-    const response = await this.http.get<ApiResponse<Template>>(
-      `/api/templates/attachment/${id}`
-    );
-    return response.data;
+    // Backend returns template directly (not wrapped)
+    return this.http.get<Template>(`/api/templates/${id}`);
   }
 
   /**
@@ -35,33 +40,41 @@ export class TemplatesResource {
    *
    * @example
    * ```typescript
-   * // List all PDF templates
-   * const { data } = await renderbase.templates.list({ type: 'pdf' });
+   * // List all templates
+   * const { data } = await renderbase.templates.list();
    *
-   * // List all Excel templates
-   * const { data: excelTemplates } = await renderbase.templates.list({ type: 'excel' });
+   * // List with pagination
+   * const { data, meta } = await renderbase.templates.list({ page: 1, limit: 10 });
    * ```
    */
   async list(
     options: ListTemplatesOptions = {}
   ): Promise<{ data: Template[]; meta: PaginationMeta }> {
-    const response = await this.http.get<ApiResponse<Template[]>>(
+    // Backend uses page/limit, not type filter
+    const response = await this.http.get<TemplateListResponse>(
       '/api/templates/attachment',
       {
-        type: options.type,
         limit: options.limit,
         page: options.page,
+        search: options.search,
       }
     );
 
     return {
       data: response.data,
-      meta: response.meta!,
+      meta: {
+        total: response.total,
+        page: response.page,
+        limit: response.limit,
+        totalPages: response.totalPages,
+      },
     };
   }
 
   /**
    * List only PDF templates
+   *
+   * Note: Filtering by type is done client-side based on outputFormats.
    *
    * @example
    * ```typescript
@@ -71,11 +84,18 @@ export class TemplatesResource {
   async listPdf(
     options: Omit<ListTemplatesOptions, 'type'> = {}
   ): Promise<{ data: Template[]; meta: PaginationMeta }> {
-    return this.list({ ...options, type: 'pdf' });
+    const result = await this.list(options);
+    // Filter client-side by outputFormats including 'pdf'
+    result.data = result.data.filter((t: any) =>
+      t.outputFormats?.includes('pdf')
+    );
+    return result;
   }
 
   /**
    * List only Excel templates
+   *
+   * Note: Filtering by type is done client-side based on outputFormats.
    *
    * @example
    * ```typescript
@@ -85,6 +105,11 @@ export class TemplatesResource {
   async listExcel(
     options: Omit<ListTemplatesOptions, 'type'> = {}
   ): Promise<{ data: Template[]; meta: PaginationMeta }> {
-    return this.list({ ...options, type: 'excel' });
+    const result = await this.list(options);
+    // Filter client-side by outputFormats including 'xlsx'
+    result.data = result.data.filter((t: any) =>
+      t.outputFormats?.includes('xlsx') || t.outputFormats?.includes('excel')
+    );
+    return result;
   }
 }
