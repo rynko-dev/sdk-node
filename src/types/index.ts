@@ -209,15 +209,6 @@ export type WebhookEventType =
   | 'document.failed'
   | 'document.downloaded';
 
-export interface CreateWebhookOptions {
-  /** URL to receive webhook events */
-  url: string;
-  /** Event types to subscribe to */
-  events: WebhookEventType[];
-  /** Webhook description (optional) */
-  description?: string;
-}
-
 export interface WebhookEvent {
   id: string;
   type: WebhookEventType;

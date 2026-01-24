@@ -1,38 +1,18 @@
 /**
  * Webhooks Resource
+ *
+ * Provides read-only access to webhook subscriptions and signature verification.
+ * Webhook subscriptions are managed through the Renderbase dashboard.
  */
 
 import type { HttpClient } from '../utils/http';
 import type {
   WebhookSubscription,
-  CreateWebhookOptions,
   PaginationMeta,
 } from '../types';
 
 export class WebhooksResource {
   constructor(private http: HttpClient) {}
-
-  /**
-   * Create a webhook subscription
-   *
-   * @example
-   * ```typescript
-   * const webhook = await renderbase.webhooks.create({
-   *   url: 'https://your-app.com/webhooks/renderbase',
-   *   events: ['document.generated', 'document.failed'],
-   *   description: 'My Webhook',
-   * });
-   * console.log('Webhook ID:', webhook.id);
-   * console.log('Secret:', webhook.secret); // Save this for verification!
-   * ```
-   */
-  async create(options: CreateWebhookOptions): Promise<WebhookSubscription> {
-    // Backend returns webhook directly (not wrapped)
-    return this.http.post<WebhookSubscription>(
-      '/api/v1/webhook-subscriptions',
-      options
-    );
-  }
 
   /**
    * Get a webhook subscription by ID
@@ -74,40 +54,5 @@ export class WebhooksResource {
         totalPages: 1,
       },
     };
-  }
-
-  /**
-   * Delete a webhook subscription
-   *
-   * @example
-   * ```typescript
-   * await renderbase.webhooks.delete('wh_abc123');
-   * console.log('Webhook deleted');
-   * ```
-   */
-  async delete(id: string): Promise<void> {
-    await this.http.delete(`/api/v1/webhook-subscriptions/${id}`);
-  }
-
-  /**
-   * Update a webhook subscription
-   *
-   * @example
-   * ```typescript
-   * const updated = await renderbase.webhooks.update('wh_abc123', {
-   *   events: ['document.generated', 'document.failed'],
-   *   isActive: true,
-   * });
-   * ```
-   */
-  async update(
-    id: string,
-    options: Partial<CreateWebhookOptions> & { isActive?: boolean }
-  ): Promise<WebhookSubscription> {
-    // Backend returns webhook directly (not wrapped)
-    return this.http.patch<WebhookSubscription>(
-      `/api/v1/webhook-subscriptions/${id}`,
-      options
-    );
   }
 }

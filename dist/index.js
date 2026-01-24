@@ -140,11 +140,10 @@ var DocumentsResource = class {
    * ```
    */
   async generate(options) {
-    const response = await this.http.post(
+    return this.http.post(
       "/api/v1/documents/generate",
       options
     );
-    return response.data;
   }
   /**
    * Generate a PDF document from a template
@@ -197,11 +196,10 @@ var DocumentsResource = class {
    * ```
    */
   async generateBatch(options) {
-    const response = await this.http.post(
+    return this.http.post(
       "/api/v1/documents/generate/batch",
       options
     );
-    return response.data;
   }
   /**
    * Get a document job by ID
@@ -216,10 +214,7 @@ var DocumentsResource = class {
    * ```
    */
   async getJob(jobId) {
-    const response = await this.http.get(
-      `/api/v1/documents/jobs/${jobId}`
-    );
-    return response.data;
+    return this.http.get(`/api/v1/documents/jobs/${jobId}`);
   }
   /**
    * List document jobs with optional filters
@@ -228,7 +223,6 @@ var DocumentsResource = class {
    * ```typescript
    * const { data, meta } = await renderbase.documents.listJobs({
    *   status: 'completed',
-   *   format: 'pdf',
    *   limit: 10,
    * });
    * console.log(`Found ${meta.total} jobs`);
@@ -239,17 +233,22 @@ var DocumentsResource = class {
       "/api/v1/documents/jobs",
       {
         status: options.status,
-        format: options.format,
         templateId: options.templateId,
-        dateFrom: options.dateFrom,
-        dateTo: options.dateTo,
+        workspaceId: options.workspaceId,
         limit: options.limit,
-        page: options.page
+        offset: options.offset ?? ((options.page ?? 1) - 1) * (options.limit ?? 20)
       }
     );
+    const limit = options.limit ?? 20;
+    const page = options.page ?? 1;
     return {
-      data: response.data,
-      meta: response.meta
+      data: response.jobs,
+      meta: {
+        total: response.total,
+        page,
+        limit,
+        totalPages: Math.ceil(response.total / limit)
+      }
     };
   }
   /**
@@ -301,39 +300,43 @@ var TemplatesResource = class {
    * ```
    */
   async get(id) {
-    const response = await this.http.get(
-      `/api/templates/attachment/${id}`
-    );
-    return response.data;
+    return this.http.get(`/api/templates/${id}`);
   }
   /**
    * List templates with optional filters
    *
    * @example
    * ```typescript
-   * // List all PDF templates
-   * const { data } = await renderbase.templates.list({ type: 'pdf' });
+   * // List all templates
+   * const { data } = await renderbase.templates.list();
    *
-   * // List all Excel templates
-   * const { data: excelTemplates } = await renderbase.templates.list({ type: 'excel' });
+   * // List with pagination
+   * const { data, meta } = await renderbase.templates.list({ page: 1, limit: 10 });
    * ```
    */
   async list(options = {}) {
     const response = await this.http.get(
       "/api/templates/attachment",
       {
-        type: options.type,
         limit: options.limit,
-        page: options.page
+        page: options.page,
+        search: options.search
       }
     );
     return {
       data: response.data,
-      meta: response.meta
+      meta: {
+        total: response.total,
+        page: response.page,
+        limit: response.limit,
+        totalPages: response.totalPages
+      }
     };
   }
   /**
    * List only PDF templates
+   *
+   * Note: Filtering by type is done client-side based on outputFormats.
    *
    * @example
    * ```typescript
@@ -341,10 +344,16 @@ var TemplatesResource = class {
    * ```
    */
   async listPdf(options = {}) {
-    return this.list({ ...options, type: "pdf" });
+    const result = await this.list(options);
+    result.data = result.data.filter(
+      (t) => t.outputFormats?.includes("pdf")
+    );
+    return result;
   }
   /**
    * List only Excel templates
+   *
+   * Note: Filtering by type is done client-side based on outputFormats.
    *
    * @example
    * ```typescript
@@ -352,7 +361,11 @@ var TemplatesResource = class {
    * ```
    */
   async listExcel(options = {}) {
-    return this.list({ ...options, type: "excel" });
+    const result = await this.list(options);
+    result.data = result.data.filter(
+      (t) => t.outputFormats?.includes("xlsx") || t.outputFormats?.includes("excel")
+    );
+    return result;
   }
 };
 
@@ -376,11 +389,10 @@ var WebhooksResource = class {
    * ```
    */
   async create(options) {
-    const response = await this.http.post(
+    return this.http.post(
       "/api/v1/webhook-subscriptions",
       options
     );
-    return response.data;
   }
   /**
    * Get a webhook subscription by ID
@@ -392,10 +404,9 @@ var WebhooksResource = class {
    * ```
    */
   async get(id) {
-    const response = await this.http.get(
+    return this.http.get(
       `/api/v1/webhook-subscriptions/${id}`
     );
-    return response.data;
   }
   /**
    * List all webhook subscriptions
@@ -403,7 +414,7 @@ var WebhooksResource = class {
    * @example
    * ```typescript
    * const { data } = await renderbase.webhooks.list();
-   * console.log('Active webhooks:', data.filter(w => w.active).length);
+   * console.log('Active webhooks:', data.filter(w => w.isActive).length);
    * ```
    */
   async list() {
@@ -412,7 +423,12 @@ var WebhooksResource = class {
     );
     return {
       data: response.data,
-      meta: response.meta
+      meta: {
+        total: response.total,
+        page: 1,
+        limit: response.data.length,
+        totalPages: 1
+      }
     };
   }
   /**
@@ -439,11 +455,10 @@ var WebhooksResource = class {
    * ```
    */
   async update(id, options) {
-    const response = await this.http.patch(
+    return this.http.patch(
       `/api/v1/webhook-subscriptions/${id}`,
       options
     );
-    return response.data;
   }
 };
 
@@ -494,8 +509,7 @@ var Renderbase = class {
    * ```
    */
   async me() {
-    const response = await this.http.get("/api/auth/verify");
-    return response.data;
+    return this.http.get("/api/auth/verify");
   }
   /**
    * Verify the API key is valid

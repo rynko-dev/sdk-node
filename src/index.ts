@@ -75,7 +75,6 @@ export type {
   // Webhook types
   WebhookSubscription,
   WebhookEventType,
-  CreateWebhookOptions,
   WebhookEvent,
   // Response types
   ApiResponse,

@@ -179,12 +179,12 @@ interface TemplateVariable {
     defaultValue?: unknown;
 }
 interface ListTemplatesOptions {
-    /** Filter by template type */
-    type?: 'pdf' | 'excel';
     /** Number of results per page (default: 20) */
     limit?: number;
     /** Page number (default: 1) */
     page?: number;
+    /** Search by template name */
+    search?: string;
 }
 interface WebhookSubscription {
     id: string;
@@ -331,7 +331,6 @@ declare class DocumentsResource {
      * ```typescript
      * const { data, meta } = await renderbase.documents.listJobs({
      *   status: 'completed',
-     *   format: 'pdf',
      *   limit: 10,
      * });
      * console.log(`Found ${meta.total} jobs`);
@@ -386,11 +385,11 @@ declare class TemplatesResource {
      *
      * @example
      * ```typescript
-     * // List all PDF templates
-     * const { data } = await renderbase.templates.list({ type: 'pdf' });
+     * // List all templates
+     * const { data } = await renderbase.templates.list();
      *
-     * // List all Excel templates
-     * const { data: excelTemplates } = await renderbase.templates.list({ type: 'excel' });
+     * // List with pagination
+     * const { data, meta } = await renderbase.templates.list({ page: 1, limit: 10 });
      * ```
      */
     list(options?: ListTemplatesOptions): Promise<{
@@ -399,6 +398,8 @@ declare class TemplatesResource {
     }>;
     /**
      * List only PDF templates
+     *
+     * Note: Filtering by type is done client-side based on outputFormats.
      *
      * @example
      * ```typescript
@@ -411,6 +412,8 @@ declare class TemplatesResource {
     }>;
     /**
      * List only Excel templates
+     *
+     * Note: Filtering by type is done client-side based on outputFormats.
      *
      * @example
      * ```typescript
@@ -461,7 +464,7 @@ declare class WebhooksResource {
      * @example
      * ```typescript
      * const { data } = await renderbase.webhooks.list();
-     * console.log('Active webhooks:', data.filter(w => w.active).length);
+     * console.log('Active webhooks:', data.filter(w => w.isActive).length);
      * ```
      */
     list(): Promise<{
