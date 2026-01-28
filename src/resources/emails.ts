@@ -22,7 +22,7 @@ export class EmailsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.emails.send({
+   * const result = await rynko.emails.send({
    *   templateId: 'tmpl_abc123',
    *   to: 'customer@example.com',
    *   toName: 'John Doe',
@@ -47,7 +47,7 @@ export class EmailsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.emails.sendWithPdf({
+   * const result = await rynko.emails.sendWithPdf({
    *   templateId: 'tmpl_email123',
    *   to: 'customer@example.com',
    *   variables: { invoiceNumber: 'INV-001' },
@@ -87,7 +87,7 @@ export class EmailsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.emails.sendWithExcel({
+   * const result = await rynko.emails.sendWithExcel({
    *   templateId: 'tmpl_email123',
    *   to: 'customer@example.com',
    *   variables: { reportDate: '2025-01-15' },
@@ -123,7 +123,7 @@ export class EmailsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.emails.sendBulk({
+   * const result = await rynko.emails.sendBulk({
    *   templateId: 'tmpl_newsletter',
    *   recipients: [
    *     { email: 'user1@example.com', name: 'User 1', variables: { firstName: 'User' } },
@@ -149,7 +149,7 @@ export class EmailsResource {
    *
    * @example
    * ```typescript
-   * const email = await renderbase.emails.get('email_abc123');
+   * const email = await rynko.emails.get('email_abc123');
    * console.log('Status:', email.status);
    * ```
    */
@@ -163,7 +163,7 @@ export class EmailsResource {
    *
    * @example
    * ```typescript
-   * const { data, meta } = await renderbase.emails.list({
+   * const { data, meta } = await rynko.emails.list({
    *   recipient: 'customer@example.com',
    *   status: 'delivered',
    *   limit: 10,

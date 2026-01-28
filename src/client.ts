@@ -1,17 +1,17 @@
 /**
- * Renderbase SDK Client
+ * Rynko SDK Client
  */
 
 import { HttpClient } from './utils/http';
 import { DocumentsResource } from './resources/documents';
 import { TemplatesResource } from './resources/templates';
 import { WebhooksResource } from './resources/webhooks';
-import type { RenderbaseConfig, ApiResponse, User } from './types';
+import type { RynkoConfig, ApiResponse, User } from './types';
 
-const DEFAULT_BASE_URL = 'https://api.renderbase.dev';
+const DEFAULT_BASE_URL = 'https://api.rynko.dev';
 const DEFAULT_TIMEOUT = 30000;
 
-export class Renderbase {
+export class Rynko {
   private http: HttpClient;
 
   /** Document generation operations */
@@ -24,25 +24,25 @@ export class Renderbase {
   public webhooks: WebhooksResource;
 
   /**
-   * Create a new Renderbase client
+   * Create a new Rynko client
    *
    * @example
    * ```typescript
-   * import { Renderbase } from '@renderbase/sdk';
+   * import { Rynko } from '@rynko/sdk';
    *
-   * const renderbase = new Renderbase({
-   *   apiKey: process.env.RENDERBASE_API_KEY!,
+   * const rynko = new Rynko({
+   *   apiKey: process.env.RYNKO_API_KEY!,
    * });
    *
    * // Generate a PDF
-   * const result = await renderbase.documents.generate({
+   * const result = await rynko.documents.generate({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   variables: { invoiceNumber: 'INV-001' },
    * });
    * ```
    */
-  constructor(config: RenderbaseConfig) {
+  constructor(config: RynkoConfig) {
     if (!config.apiKey) {
       throw new Error('apiKey is required');
     }
@@ -65,7 +65,7 @@ export class Renderbase {
    *
    * @example
    * ```typescript
-   * const user = await renderbase.me();
+   * const user = await rynko.me();
    * console.log('Authenticated as:', user.email);
    * ```
    */
@@ -79,7 +79,7 @@ export class Renderbase {
    *
    * @example
    * ```typescript
-   * const isValid = await renderbase.verifyApiKey();
+   * const isValid = await rynko.verifyApiKey();
    * if (!isValid) {
    *   throw new Error('Invalid API key');
    * }
@@ -96,17 +96,17 @@ export class Renderbase {
 }
 
 /**
- * Create a Renderbase client
+ * Create a Rynko client
  *
  * @example
  * ```typescript
- * import { createClient } from '@renderbase/sdk';
+ * import { createClient } from '@rynko/sdk';
  *
- * const renderbase = createClient({
- *   apiKey: process.env.RENDERBASE_API_KEY!,
+ * const rynko = createClient({
+ *   apiKey: process.env.RYNKO_API_KEY!,
  * });
  * ```
  */
-export function createClient(config: RenderbaseConfig): Renderbase {
-  return new Renderbase(config);
+export function createClient(config: RynkoConfig): Rynko {
+  return new Rynko(config);
 }

@@ -1,32 +1,32 @@
 /**
- * Renderbase Node.js SDK Integration Tests
+ * Rynko Node.js SDK Integration Tests
  *
  * Run these tests against a live API to verify SDK functionality.
  *
  * Prerequisites:
- * 1. Set RENDERBASE_API_KEY environment variable
- * 2. Set RENDERBASE_API_URL environment variable (optional, defaults to https://api.renderbase.dev)
+ * 1. Set RYNKO_API_KEY environment variable
+ * 2. Set RYNKO_API_URL environment variable (optional, defaults to https://api.rynko.dev)
  * 3. Have at least one template created in your workspace
  *
  * Usage:
- *   RENDERBASE_API_KEY=your_key npx ts-node tests/integration.test.ts
+ *   RYNKO_API_KEY=your_key npx ts-node tests/integration.test.ts
  *
  * Or with custom API URL:
- *   RENDERBASE_API_KEY=your_key RENDERBASE_API_URL=http://localhost:3000 npx ts-node tests/integration.test.ts
+ *   RYNKO_API_KEY=your_key RYNKO_API_URL=http://localhost:3000 npx ts-node tests/integration.test.ts
  */
 
-import { Renderbase, RenderbaseError } from '../src';
+import { Rynko, RynkoError } from '../src';
 
 // Configuration
-const API_KEY = process.env.RENDERBASE_API_KEY;
-const API_URL = process.env.RENDERBASE_API_URL || 'https://api.renderbase.dev';
+const API_KEY = process.env.RYNKO_API_KEY;
+const API_URL = process.env.RYNKO_API_URL || 'https://api.rynko.dev';
 
 if (!API_KEY) {
-  console.error('❌ RENDERBASE_API_KEY environment variable is required');
+  console.error('❌ RYNKO_API_KEY environment variable is required');
   process.exit(1);
 }
 
-const client = new Renderbase({
+const client = new Rynko({
   apiKey: API_KEY,
   baseUrl: API_URL,
 });
@@ -72,7 +72,7 @@ async function test(name: string, fn: () => Promise<void>): Promise<void> {
 }
 
 async function runTests(): Promise<void> {
-  console.log('\n🧪 Renderbase Node.js SDK Integration Tests\n');
+  console.log('\n🧪 Rynko Node.js SDK Integration Tests\n');
   console.log(`API URL: ${API_URL}`);
   console.log(`API Key: ${API_KEY?.substring(0, 10)}...`);
   console.log('\n---\n');
@@ -263,7 +263,7 @@ async function runTests(): Promise<void> {
 
   await test('webhooks.create() - Create webhook subscription', async () => {
     const webhook = await client.webhooks.create({
-      url: 'https://webhook.site/test-renderbase-sdk',
+      url: 'https://webhook.site/test-rynko-sdk',
       events: ['document.generated', 'document.failed'],
       description: 'SDK Integration Test Webhook',
     });
@@ -311,7 +311,7 @@ async function runTests(): Promise<void> {
       await client.templates.get('invalid-template-id-12345');
       throw new Error('Expected error for invalid template');
     } catch (error) {
-      if (error instanceof RenderbaseError) {
+      if (error instanceof RynkoError) {
         console.log(`  Error code: ${error.code}`);
         console.log(`  Status: ${error.statusCode}`);
         return; // Test passed

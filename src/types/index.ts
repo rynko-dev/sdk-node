@@ -1,5 +1,5 @@
 /**
- * Renderbase SDK Types
+ * Rynko SDK Types
  */
 
 // ============================================
@@ -19,10 +19,10 @@ export interface RetryConfig {
   retryableStatuses?: number[];
 }
 
-export interface RenderbaseConfig {
+export interface RynkoConfig {
   /** API Key for authentication */
   apiKey: string;
-  /** Base URL for the API (default: https://api.renderbase.dev) */
+  /** Base URL for the API (default: https://api.rynko.dev) */
   baseUrl?: string;
   /** Request timeout in milliseconds (default: 30000) */
   timeout?: number;

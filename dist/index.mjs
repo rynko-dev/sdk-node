@@ -76,7 +76,7 @@ var HttpClient = class {
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${this.config.apiKey}`,
-      "User-Agent": "@renderbase/sdk/1.0.0",
+      "User-Agent": "@rynko/sdk/1.0.0",
       ...this.config.headers
     };
     const maxAttempts = this.retryConfig?.maxAttempts ?? 1;
@@ -97,7 +97,7 @@ var HttpClient = class {
           const delay = this.calculateDelay(attempt, retryAfterMs);
           const data2 = await response.json().catch(() => ({}));
           const error = data2;
-          lastError = new RenderbaseError(
+          lastError = new RynkoError(
             error.message || `HTTP ${response.status}`,
             error.error || "ApiError",
             response.status
@@ -110,7 +110,7 @@ var HttpClient = class {
         const data = await response.json();
         if (!response.ok) {
           const error = data;
-          throw new RenderbaseError(
+          throw new RynkoError(
             error.message || `HTTP ${response.status}`,
             error.error || "ApiError",
             response.status
@@ -119,7 +119,7 @@ var HttpClient = class {
         return data;
       } catch (error) {
         clearTimeout(timeoutId);
-        if (error instanceof RenderbaseError) {
+        if (error instanceof RynkoError) {
           if (!this.shouldRetry(error.statusCode) || attempt >= maxAttempts - 1) {
             throw error;
           }
@@ -130,17 +130,17 @@ var HttpClient = class {
         }
         if (error instanceof Error) {
           if (error.name === "AbortError") {
-            throw new RenderbaseError("Request timeout", "TimeoutError", 408);
+            throw new RynkoError("Request timeout", "TimeoutError", 408);
           }
-          throw new RenderbaseError(error.message, "NetworkError", 0);
+          throw new RynkoError(error.message, "NetworkError", 0);
         }
-        throw new RenderbaseError("Unknown error", "UnknownError", 0);
+        throw new RynkoError("Unknown error", "UnknownError", 0);
       }
     }
     if (lastError) {
       throw lastError;
     }
-    throw new RenderbaseError("Request failed after retries", "RetryExhausted", 0);
+    throw new RynkoError("Request failed after retries", "RetryExhausted", 0);
   }
   async get(path, query) {
     return this.request("GET", path, { query });
@@ -158,10 +158,10 @@ var HttpClient = class {
     return this.request("DELETE", path);
   }
 };
-var RenderbaseError = class extends Error {
+var RynkoError = class extends Error {
   constructor(message, code, statusCode) {
     super(message);
-    this.name = "RenderbaseError";
+    this.name = "RynkoError";
     this.code = code;
     this.statusCode = statusCode;
   }
@@ -177,7 +177,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generate({
+   * const result = await rynko.documents.generate({
    *   templateId: 'tmpl_abc123',
    *   format: 'pdf',
    *   variables: {
@@ -201,7 +201,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generatePdf({
+   * const result = await rynko.documents.generatePdf({
    *   templateId: 'tmpl_invoice',
    *   variables: {
    *     invoiceNumber: 'INV-001',
@@ -218,7 +218,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generateExcel({
+   * const result = await rynko.documents.generateExcel({
    *   templateId: 'tmpl_report',
    *   variables: {
    *     reportDate: '2025-01-15',
@@ -235,7 +235,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generateBatch({
+   * const result = await rynko.documents.generateBatch({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   documents: [
@@ -257,7 +257,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const job = await renderbase.documents.getJob('job_abc123');
+   * const job = await rynko.documents.getJob('job_abc123');
    * console.log('Status:', job.status);
    * if (job.status === 'completed') {
    *   console.log('Download:', job.downloadUrl);
@@ -272,7 +272,7 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const { data, meta } = await renderbase.documents.listJobs({
+   * const { data, meta } = await rynko.documents.listJobs({
    *   status: 'completed',
    *   limit: 10,
    * });
@@ -307,14 +307,14 @@ var DocumentsResource = class {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generate({
+   * const result = await rynko.documents.generate({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   variables: { invoiceNumber: 'INV-001' },
    * });
    *
    * // Wait for completion (polls every 1 second, max 30 seconds)
-   * const completedJob = await renderbase.documents.waitForCompletion(result.jobId);
+   * const completedJob = await rynko.documents.waitForCompletion(result.jobId);
    * console.log('Download URL:', completedJob.downloadUrl);
    * ```
    */
@@ -345,7 +345,7 @@ var TemplatesResource = class {
    *
    * @example
    * ```typescript
-   * const template = await renderbase.templates.get('tmpl_abc123');
+   * const template = await rynko.templates.get('tmpl_abc123');
    * console.log('Template:', template.name);
    * console.log('Variables:', template.variables);
    * ```
@@ -359,10 +359,10 @@ var TemplatesResource = class {
    * @example
    * ```typescript
    * // List all templates
-   * const { data } = await renderbase.templates.list();
+   * const { data } = await rynko.templates.list();
    *
    * // List with pagination
-   * const { data, meta } = await renderbase.templates.list({ page: 1, limit: 10 });
+   * const { data, meta } = await rynko.templates.list({ page: 1, limit: 10 });
    * ```
    */
   async list(options = {}) {
@@ -391,7 +391,7 @@ var TemplatesResource = class {
    *
    * @example
    * ```typescript
-   * const { data } = await renderbase.templates.listPdf();
+   * const { data } = await rynko.templates.listPdf();
    * ```
    */
   async listPdf(options = {}) {
@@ -408,7 +408,7 @@ var TemplatesResource = class {
    *
    * @example
    * ```typescript
-   * const { data } = await renderbase.templates.listExcel();
+   * const { data } = await rynko.templates.listExcel();
    * ```
    */
   async listExcel(options = {}) {
@@ -430,7 +430,7 @@ var WebhooksResource = class {
    *
    * @example
    * ```typescript
-   * const webhook = await renderbase.webhooks.get('wh_abc123');
+   * const webhook = await rynko.webhooks.get('wh_abc123');
    * console.log('Events:', webhook.events);
    * ```
    */
@@ -444,7 +444,7 @@ var WebhooksResource = class {
    *
    * @example
    * ```typescript
-   * const { data } = await renderbase.webhooks.list();
+   * const { data } = await rynko.webhooks.list();
    * console.log('Active webhooks:', data.filter(w => w.isActive).length);
    * ```
    */
@@ -465,22 +465,22 @@ var WebhooksResource = class {
 };
 
 // src/client.ts
-var DEFAULT_BASE_URL = "https://api.renderbase.dev";
+var DEFAULT_BASE_URL = "https://api.rynko.dev";
 var DEFAULT_TIMEOUT = 3e4;
-var Renderbase = class {
+var Rynko = class {
   /**
-   * Create a new Renderbase client
+   * Create a new Rynko client
    *
    * @example
    * ```typescript
-   * import { Renderbase } from '@renderbase/sdk';
+   * import { Rynko } from '@rynko/sdk';
    *
-   * const renderbase = new Renderbase({
-   *   apiKey: process.env.RENDERBASE_API_KEY!,
+   * const rynko = new Rynko({
+   *   apiKey: process.env.RYNKO_API_KEY!,
    * });
    *
    * // Generate a PDF
-   * const result = await renderbase.documents.generate({
+   * const result = await rynko.documents.generate({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   variables: { invoiceNumber: 'INV-001' },
@@ -507,7 +507,7 @@ var Renderbase = class {
    *
    * @example
    * ```typescript
-   * const user = await renderbase.me();
+   * const user = await rynko.me();
    * console.log('Authenticated as:', user.email);
    * ```
    */
@@ -519,7 +519,7 @@ var Renderbase = class {
    *
    * @example
    * ```typescript
-   * const isValid = await renderbase.verifyApiKey();
+   * const isValid = await rynko.verifyApiKey();
    * if (!isValid) {
    *   throw new Error('Invalid API key');
    * }
@@ -535,7 +535,7 @@ var Renderbase = class {
   }
 };
 function createClient(config) {
-  return new Renderbase(config);
+  return new Rynko(config);
 }
 
 // src/utils/webhooks.ts
@@ -592,8 +592,8 @@ var WebhookSignatureError = class extends Error {
 };
 export {
   DocumentsResource,
-  Renderbase,
-  RenderbaseError,
+  Rynko,
+  RynkoError,
   TemplatesResource,
   WebhookSignatureError,
   WebhooksResource,

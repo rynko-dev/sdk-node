@@ -1,5 +1,5 @@
 /**
- * Renderbase SDK Types
+ * Rynko SDK Types
  */
 interface RetryConfig {
     /** Maximum number of retry attempts (default: 5) */
@@ -13,10 +13,10 @@ interface RetryConfig {
     /** HTTP status codes that should trigger a retry (default: [429, 503, 504]) */
     retryableStatuses?: number[];
 }
-interface RenderbaseConfig {
+interface RynkoConfig {
     /** API Key for authentication */
     apiKey: string;
-    /** Base URL for the API (default: https://api.renderbase.dev) */
+    /** Base URL for the API (default: https://api.rynko.dev) */
     baseUrl?: string;
     /** Request timeout in milliseconds (default: 30000) */
     timeout?: number;
@@ -220,7 +220,7 @@ interface User {
 }
 
 /**
- * HTTP Client for Renderbase SDK
+ * HTTP Client for Rynko SDK
  */
 
 interface HttpClientConfig {
@@ -257,7 +257,7 @@ declare class HttpClient {
     patch<T>(path: string, body?: unknown): Promise<T>;
     delete<T>(path: string): Promise<T>;
 }
-declare class RenderbaseError extends Error {
+declare class RynkoError extends Error {
     code: string;
     statusCode: number;
     constructor(message: string, code: string, statusCode: number);
@@ -275,7 +275,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderbase.documents.generate({
+     * const result = await rynko.documents.generate({
      *   templateId: 'tmpl_abc123',
      *   format: 'pdf',
      *   variables: {
@@ -294,7 +294,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderbase.documents.generatePdf({
+     * const result = await rynko.documents.generatePdf({
      *   templateId: 'tmpl_invoice',
      *   variables: {
      *     invoiceNumber: 'INV-001',
@@ -309,7 +309,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderbase.documents.generateExcel({
+     * const result = await rynko.documents.generateExcel({
      *   templateId: 'tmpl_report',
      *   variables: {
      *     reportDate: '2025-01-15',
@@ -324,7 +324,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderbase.documents.generateBatch({
+     * const result = await rynko.documents.generateBatch({
      *   templateId: 'tmpl_invoice',
      *   format: 'pdf',
      *   documents: [
@@ -341,7 +341,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const job = await renderbase.documents.getJob('job_abc123');
+     * const job = await rynko.documents.getJob('job_abc123');
      * console.log('Status:', job.status);
      * if (job.status === 'completed') {
      *   console.log('Download:', job.downloadUrl);
@@ -354,7 +354,7 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const { data, meta } = await renderbase.documents.listJobs({
+     * const { data, meta } = await rynko.documents.listJobs({
      *   status: 'completed',
      *   limit: 10,
      * });
@@ -370,14 +370,14 @@ declare class DocumentsResource {
      *
      * @example
      * ```typescript
-     * const result = await renderbase.documents.generate({
+     * const result = await rynko.documents.generate({
      *   templateId: 'tmpl_invoice',
      *   format: 'pdf',
      *   variables: { invoiceNumber: 'INV-001' },
      * });
      *
      * // Wait for completion (polls every 1 second, max 30 seconds)
-     * const completedJob = await renderbase.documents.waitForCompletion(result.jobId);
+     * const completedJob = await rynko.documents.waitForCompletion(result.jobId);
      * console.log('Download URL:', completedJob.downloadUrl);
      * ```
      */
@@ -399,7 +399,7 @@ declare class TemplatesResource {
      *
      * @example
      * ```typescript
-     * const template = await renderbase.templates.get('tmpl_abc123');
+     * const template = await rynko.templates.get('tmpl_abc123');
      * console.log('Template:', template.name);
      * console.log('Variables:', template.variables);
      * ```
@@ -411,10 +411,10 @@ declare class TemplatesResource {
      * @example
      * ```typescript
      * // List all templates
-     * const { data } = await renderbase.templates.list();
+     * const { data } = await rynko.templates.list();
      *
      * // List with pagination
-     * const { data, meta } = await renderbase.templates.list({ page: 1, limit: 10 });
+     * const { data, meta } = await rynko.templates.list({ page: 1, limit: 10 });
      * ```
      */
     list(options?: ListTemplatesOptions): Promise<{
@@ -428,7 +428,7 @@ declare class TemplatesResource {
      *
      * @example
      * ```typescript
-     * const { data } = await renderbase.templates.listPdf();
+     * const { data } = await rynko.templates.listPdf();
      * ```
      */
     listPdf(options?: Omit<ListTemplatesOptions, 'type'>): Promise<{
@@ -442,7 +442,7 @@ declare class TemplatesResource {
      *
      * @example
      * ```typescript
-     * const { data } = await renderbase.templates.listExcel();
+     * const { data } = await rynko.templates.listExcel();
      * ```
      */
     listExcel(options?: Omit<ListTemplatesOptions, 'type'>): Promise<{
@@ -455,7 +455,7 @@ declare class TemplatesResource {
  * Webhooks Resource
  *
  * Provides read-only access to webhook subscriptions and signature verification.
- * Webhook subscriptions are managed through the Renderbase dashboard.
+ * Webhook subscriptions are managed through the Rynko dashboard.
  */
 
 declare class WebhooksResource {
@@ -466,7 +466,7 @@ declare class WebhooksResource {
      *
      * @example
      * ```typescript
-     * const webhook = await renderbase.webhooks.get('wh_abc123');
+     * const webhook = await rynko.webhooks.get('wh_abc123');
      * console.log('Events:', webhook.events);
      * ```
      */
@@ -476,7 +476,7 @@ declare class WebhooksResource {
      *
      * @example
      * ```typescript
-     * const { data } = await renderbase.webhooks.list();
+     * const { data } = await rynko.webhooks.list();
      * console.log('Active webhooks:', data.filter(w => w.isActive).length);
      * ```
      */
@@ -487,10 +487,10 @@ declare class WebhooksResource {
 }
 
 /**
- * Renderbase SDK Client
+ * Rynko SDK Client
  */
 
-declare class Renderbase {
+declare class Rynko {
     private http;
     /** Document generation operations */
     documents: DocumentsResource;
@@ -499,31 +499,31 @@ declare class Renderbase {
     /** Webhook operations */
     webhooks: WebhooksResource;
     /**
-     * Create a new Renderbase client
+     * Create a new Rynko client
      *
      * @example
      * ```typescript
-     * import { Renderbase } from '@renderbase/sdk';
+     * import { Rynko } from '@rynko/sdk';
      *
-     * const renderbase = new Renderbase({
-     *   apiKey: process.env.RENDERBASE_API_KEY!,
+     * const rynko = new Rynko({
+     *   apiKey: process.env.RYNKO_API_KEY!,
      * });
      *
      * // Generate a PDF
-     * const result = await renderbase.documents.generate({
+     * const result = await rynko.documents.generate({
      *   templateId: 'tmpl_invoice',
      *   format: 'pdf',
      *   variables: { invoiceNumber: 'INV-001' },
      * });
      * ```
      */
-    constructor(config: RenderbaseConfig);
+    constructor(config: RynkoConfig);
     /**
      * Get the current authenticated user
      *
      * @example
      * ```typescript
-     * const user = await renderbase.me();
+     * const user = await rynko.me();
      * console.log('Authenticated as:', user.email);
      * ```
      */
@@ -533,7 +533,7 @@ declare class Renderbase {
      *
      * @example
      * ```typescript
-     * const isValid = await renderbase.verifyApiKey();
+     * const isValid = await rynko.verifyApiKey();
      * if (!isValid) {
      *   throw new Error('Invalid API key');
      * }
@@ -542,18 +542,18 @@ declare class Renderbase {
     verifyApiKey(): Promise<boolean>;
 }
 /**
- * Create a Renderbase client
+ * Create a Rynko client
  *
  * @example
  * ```typescript
- * import { createClient } from '@renderbase/sdk';
+ * import { createClient } from '@rynko/sdk';
  *
- * const renderbase = createClient({
- *   apiKey: process.env.RENDERBASE_API_KEY!,
+ * const rynko = createClient({
+ *   apiKey: process.env.RYNKO_API_KEY!,
  * });
  * ```
  */
-declare function createClient(config: RenderbaseConfig): Renderbase;
+declare function createClient(config: RynkoConfig): Rynko;
 
 /**
  * Webhook Signature Verification Utilities
@@ -562,7 +562,7 @@ declare function createClient(config: RenderbaseConfig): Renderbase;
 interface VerifyWebhookOptions {
     /** Raw request body as string */
     payload: string;
-    /** Signature from X-Renderbase-Signature header */
+    /** Signature from X-Rynko-Signature header */
     signature: string;
     /** Webhook secret from your subscription */
     secret: string;
@@ -586,10 +586,10 @@ declare function computeSignature(timestamp: number, payload: string, secret: st
  *
  * @example
  * ```typescript
- * import { verifyWebhookSignature } from '@renderbase/sdk';
+ * import { verifyWebhookSignature } from '@rynko/sdk';
  *
- * app.post('/webhooks/renderbase', (req, res) => {
- *   const signature = req.headers['x-renderbase-signature'];
+ * app.post('/webhooks/rynko', (req, res) => {
+ *   const signature = req.headers['x-rynko-signature'];
  *
  *   try {
  *     const event = verifyWebhookSignature({
@@ -613,4 +613,4 @@ declare class WebhookSignatureError extends Error {
     constructor(message: string);
 }
 
-export { type ApiError, type ApiResponse, type DocumentJob, type DocumentJobStatus, DocumentsResource, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListDocumentJobsOptions, type ListTemplatesOptions, type PaginationMeta, Renderbase, type RenderbaseConfig, RenderbaseError, type RetryConfig, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };
+export { type ApiError, type ApiResponse, type DocumentJob, type DocumentJobStatus, DocumentsResource, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListDocumentJobsOptions, type ListTemplatesOptions, type PaginationMeta, type RetryConfig, Rynko, type RynkoConfig, RynkoError, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };

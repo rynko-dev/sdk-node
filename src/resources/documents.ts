@@ -21,7 +21,7 @@ export class DocumentsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generate({
+   * const result = await rynko.documents.generate({
    *   templateId: 'tmpl_abc123',
    *   format: 'pdf',
    *   variables: {
@@ -47,7 +47,7 @@ export class DocumentsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generatePdf({
+   * const result = await rynko.documents.generatePdf({
    *   templateId: 'tmpl_invoice',
    *   variables: {
    *     invoiceNumber: 'INV-001',
@@ -67,7 +67,7 @@ export class DocumentsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generateExcel({
+   * const result = await rynko.documents.generateExcel({
    *   templateId: 'tmpl_report',
    *   variables: {
    *     reportDate: '2025-01-15',
@@ -87,7 +87,7 @@ export class DocumentsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generateBatch({
+   * const result = await rynko.documents.generateBatch({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   documents: [
@@ -111,7 +111,7 @@ export class DocumentsResource {
    *
    * @example
    * ```typescript
-   * const job = await renderbase.documents.getJob('job_abc123');
+   * const job = await rynko.documents.getJob('job_abc123');
    * console.log('Status:', job.status);
    * if (job.status === 'completed') {
    *   console.log('Download:', job.downloadUrl);
@@ -128,7 +128,7 @@ export class DocumentsResource {
    *
    * @example
    * ```typescript
-   * const { data, meta } = await renderbase.documents.listJobs({
+   * const { data, meta } = await rynko.documents.listJobs({
    *   status: 'completed',
    *   limit: 10,
    * });
@@ -169,14 +169,14 @@ export class DocumentsResource {
    *
    * @example
    * ```typescript
-   * const result = await renderbase.documents.generate({
+   * const result = await rynko.documents.generate({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
    *   variables: { invoiceNumber: 'INV-001' },
    * });
    *
    * // Wait for completion (polls every 1 second, max 30 seconds)
-   * const completedJob = await renderbase.documents.waitForCompletion(result.jobId);
+   * const completedJob = await rynko.documents.waitForCompletion(result.jobId);
    * console.log('Download URL:', completedJob.downloadUrl);
    * ```
    */

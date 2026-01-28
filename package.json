@@ -1,7 +1,7 @@
 {
-  "name": "@renderbase/sdk",
+  "name": "@rynko/sdk",
   "version": "1.0.0",
-  "description": "Official Node.js SDK for Renderbase - Generate PDFs and Excel files from templates",
+  "description": "Official Node.js SDK for Rynko - Generate PDFs and Excel files from templates",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -24,7 +24,7 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "renderbase",
+    "rynko",
     "pdf",
     "excel",
     "document-generation",
@@ -32,15 +32,15 @@
     "sdk",
     "api"
   ],
-  "author": "Renderbase <support@renderbase.dev>",
+  "author": "Rynko <support@rynko.dev>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/renderbase/sdk-node.git"
+    "url": "https://github.com/rynko-dev/sdk-node.git"
   },
-  "homepage": "https://docs.renderbase.dev/sdk/node",
+  "homepage": "https://docs.rynko.dev/sdk/node",
   "bugs": {
-    "url": "https://github.com/renderbase/sdk-node/issues"
+    "url": "https://github.com/rynko-dev/sdk-node/issues"
   },
   "engines": {
     "node": ">=18.0.0"

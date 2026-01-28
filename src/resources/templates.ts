@@ -25,7 +25,7 @@ export class TemplatesResource {
    *
    * @example
    * ```typescript
-   * const template = await renderbase.templates.get('tmpl_abc123');
+   * const template = await rynko.templates.get('tmpl_abc123');
    * console.log('Template:', template.name);
    * console.log('Variables:', template.variables);
    * ```
@@ -41,10 +41,10 @@ export class TemplatesResource {
    * @example
    * ```typescript
    * // List all templates
-   * const { data } = await renderbase.templates.list();
+   * const { data } = await rynko.templates.list();
    *
    * // List with pagination
-   * const { data, meta } = await renderbase.templates.list({ page: 1, limit: 10 });
+   * const { data, meta } = await rynko.templates.list({ page: 1, limit: 10 });
    * ```
    */
   async list(
@@ -78,7 +78,7 @@ export class TemplatesResource {
    *
    * @example
    * ```typescript
-   * const { data } = await renderbase.templates.listPdf();
+   * const { data } = await rynko.templates.listPdf();
    * ```
    */
   async listPdf(
@@ -99,7 +99,7 @@ export class TemplatesResource {
    *
    * @example
    * ```typescript
-   * const { data } = await renderbase.templates.listExcel();
+   * const { data } = await rynko.templates.listExcel();
    * ```
    */
   async listExcel(

@@ -1,8 +1,8 @@
-# @renderbase/sdk
+# @rynko/sdk
 
-Official Node.js SDK for [Renderbase](https://renderbase.dev) - the document generation platform with unified template design for PDF and Excel documents.
+Official Node.js SDK for [Rynko](https://rynko.dev) - the document generation platform with unified template design for PDF and Excel documents.
 
-[![npm version](https://img.shields.io/npm/v/@renderbase/sdk.svg)](https://www.npmjs.com/package/@renderbase/sdk)
+[![npm version](https://img.shields.io/npm/v/@rynko/sdk.svg)](https://www.npmjs.com/package/@rynko/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Table of Contents
@@ -36,24 +36,24 @@ Official Node.js SDK for [Renderbase](https://renderbase.dev) - the document gen
 ## Installation
 
 ```bash
-npm install @renderbase/sdk
+npm install @rynko/sdk
 # or
-yarn add @renderbase/sdk
+yarn add @rynko/sdk
 # or
-pnpm add @renderbase/sdk
+pnpm add @rynko/sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { Renderbase } from '@renderbase/sdk';
+import { Rynko } from '@rynko/sdk';
 
-const renderbase = new Renderbase({
-  apiKey: process.env.RENDERBASE_API_KEY!,
+const rynko = new Rynko({
+  apiKey: process.env.RYNKO_API_KEY!,
 });
 
 // Generate a PDF document (async - returns job info immediately)
-const job = await renderbase.documents.generatePdf({
+const job = await rynko.documents.generatePdf({
   templateId: 'tmpl_invoice',
   variables: {
     customerName: 'John Doe',
@@ -66,7 +66,7 @@ console.log('Job ID:', job.jobId);
 console.log('Status:', job.status);  // 'queued'
 
 // Wait for completion to get the download URL
-const completed = await renderbase.documents.waitForCompletion(job.jobId);
+const completed = await rynko.documents.waitForCompletion(job.jobId);
 console.log('Download URL:', completed.downloadUrl);
 ```
 
@@ -86,7 +86,7 @@ console.log('Download URL:', completed.downloadUrl);
 
 ### Get an API Key
 
-1. Log in to your [Renderbase Dashboard](https://app.renderbase.dev)
+1. Log in to your [Rynko Dashboard](https://app.rynko.dev)
 2. Navigate to **Settings** → **API Keys**
 3. Click **Create API Key**
 4. Copy the key and store it securely (it won't be shown again)
@@ -94,15 +94,15 @@ console.log('Download URL:', completed.downloadUrl);
 ### Initialize the Client
 
 ```typescript
-import { Renderbase } from '@renderbase/sdk';
+import { Rynko } from '@rynko/sdk';
 
 // Using environment variable (recommended)
-const renderbase = new Renderbase({
-  apiKey: process.env.RENDERBASE_API_KEY!,
+const rynko = new Rynko({
+  apiKey: process.env.RYNKO_API_KEY!,
 });
 
 // Verify authentication
-const user = await renderbase.me();
+const user = await rynko.me();
 console.log('Authenticated as:', user.email);
 console.log('Team:', user.teamName);
 ```
@@ -111,19 +111,19 @@ console.log('Team:', user.teamName);
 
 ```typescript
 // Check if API key is valid
-const isValid = await renderbase.verifyApiKey();
+const isValid = await rynko.verifyApiKey();
 console.log('API Key valid:', isValid);
 ```
 
 ## Document Generation
 
-Document generation in Renderbase is **asynchronous**. When you call a generate method, the job is queued for processing and you receive a job ID immediately. Use `waitForCompletion()` to poll until the document is ready.
+Document generation in Rynko is **asynchronous**. When you call a generate method, the job is queued for processing and you receive a job ID immediately. Use `waitForCompletion()` to poll until the document is ready.
 
 ### Generate PDF
 
 ```typescript
 // Queue PDF generation
-const job = await renderbase.documents.generatePdf({
+const job = await rynko.documents.generatePdf({
   templateId: 'tmpl_invoice',
   variables: {
     invoiceNumber: 'INV-001',
@@ -143,14 +143,14 @@ console.log('Job queued:', job.jobId);
 console.log('Status:', job.status);  // 'queued'
 
 // Wait for completion
-const completed = await renderbase.documents.waitForCompletion(job.jobId);
+const completed = await rynko.documents.waitForCompletion(job.jobId);
 console.log('Download URL:', completed.downloadUrl);
 ```
 
 ### Generate Excel
 
 ```typescript
-const job = await renderbase.documents.generateExcel({
+const job = await rynko.documents.generateExcel({
   templateId: 'tmpl_sales_report',
   variables: {
     reportTitle: 'Q1 2026 Sales Report',
@@ -165,7 +165,7 @@ const job = await renderbase.documents.generateExcel({
   },
 });
 
-const completed = await renderbase.documents.waitForCompletion(job.jobId);
+const completed = await rynko.documents.waitForCompletion(job.jobId);
 console.log('Excel file ready:', completed.downloadUrl);
 ```
 
@@ -174,7 +174,7 @@ console.log('Excel file ready:', completed.downloadUrl);
 The `generate()` method supports all document formats and advanced options:
 
 ```typescript
-const job = await renderbase.documents.generate({
+const job = await rynko.documents.generate({
   // Required
   templateId: 'tmpl_contract',
   format: 'pdf',  // 'pdf' | 'excel' | 'csv'
@@ -206,7 +206,7 @@ Generate multiple documents from a single template:
 
 ```typescript
 // Each object in the documents array contains variables for one document
-const batch = await renderbase.documents.generateBatch({
+const batch = await rynko.documents.generateBatch({
   templateId: 'tmpl_invoice',
   format: 'pdf',
   documents: [
@@ -241,10 +241,10 @@ The `waitForCompletion()` method polls the job status until it completes or fail
 
 ```typescript
 // Default settings (1 second interval, 30 second timeout)
-const completed = await renderbase.documents.waitForCompletion(job.jobId);
+const completed = await rynko.documents.waitForCompletion(job.jobId);
 
 // Custom polling settings
-const completed = await renderbase.documents.waitForCompletion(job.jobId, {
+const completed = await rynko.documents.waitForCompletion(job.jobId, {
   pollInterval: 2000,   // Check every 2 seconds
   timeout: 60000,       // Wait up to 60 seconds
 });
@@ -265,7 +265,7 @@ if (completed.status === 'completed') {
 ### Get Job Status
 
 ```typescript
-const job = await renderbase.documents.getJob('job_abc123');
+const job = await rynko.documents.getJob('job_abc123');
 
 console.log('Status:', job.status);
 // Possible values: 'queued' | 'processing' | 'completed' | 'failed'
@@ -290,7 +290,7 @@ if (job.status === 'failed') {
 
 ```typescript
 // List recent jobs with pagination
-const { data: jobs, meta } = await renderbase.documents.listJobs({
+const { data: jobs, meta } = await rynko.documents.listJobs({
   limit: 20,
   page: 1,
 });
@@ -303,33 +303,33 @@ for (const job of jobs) {
 }
 
 // Filter by status
-const { data: completedJobs } = await renderbase.documents.listJobs({
+const { data: completedJobs } = await rynko.documents.listJobs({
   status: 'completed',
 });
 
 // Filter by format
-const { data: pdfJobs } = await renderbase.documents.listJobs({
+const { data: pdfJobs } = await rynko.documents.listJobs({
   format: 'pdf',
 });
 
 // Filter by template
-const { data: invoiceJobs } = await renderbase.documents.listJobs({
+const { data: invoiceJobs } = await rynko.documents.listJobs({
   templateId: 'tmpl_invoice',
 });
 
 // Filter by workspace
-const { data: workspaceJobs } = await renderbase.documents.listJobs({
+const { data: workspaceJobs } = await rynko.documents.listJobs({
   workspaceId: 'ws_abc123',
 });
 
 // Filter by date range
-const { data: recentJobs } = await renderbase.documents.listJobs({
+const { data: recentJobs } = await rynko.documents.listJobs({
   dateFrom: new Date('2026-01-01'),
   dateTo: new Date('2026-01-31'),
 });
 
 // Combine filters
-const { data: filteredJobs } = await renderbase.documents.listJobs({
+const { data: filteredJobs } = await rynko.documents.listJobs({
   status: 'completed',
   format: 'pdf',
   templateId: 'tmpl_invoice',
@@ -343,7 +343,7 @@ const { data: filteredJobs } = await renderbase.documents.listJobs({
 
 ```typescript
 // List all templates
-const { data: templates, meta } = await renderbase.templates.list();
+const { data: templates, meta } = await rynko.templates.list();
 
 console.log('Total templates:', meta.total);
 
@@ -352,28 +352,28 @@ for (const template of templates) {
 }
 
 // Paginated list
-const { data: page2 } = await renderbase.templates.list({
+const { data: page2 } = await rynko.templates.list({
   page: 2,
   limit: 10,
 });
 
 // Search by name
-const { data: invoiceTemplates } = await renderbase.templates.list({
+const { data: invoiceTemplates } = await rynko.templates.list({
   search: 'invoice',
 });
 
 // List PDF templates only
-const { data: pdfTemplates } = await renderbase.templates.listPdf();
+const { data: pdfTemplates } = await rynko.templates.listPdf();
 
 // List Excel templates only
-const { data: excelTemplates } = await renderbase.templates.listExcel();
+const { data: excelTemplates } = await rynko.templates.listExcel();
 ```
 
 ### Get Template Details
 
 ```typescript
 // Get template by ID (supports UUID, shortId, or slug)
-const template = await renderbase.templates.get('tmpl_invoice');
+const template = await rynko.templates.get('tmpl_invoice');
 
 console.log('Template:', template.name);
 console.log('Type:', template.type);  // 'pdf' | 'excel'
@@ -396,12 +396,12 @@ if (template.variables) {
 
 ## Webhooks
 
-Webhook subscriptions are managed through the [Renderbase Dashboard](https://app.renderbase.dev). The SDK provides read-only access to view webhooks and utilities for signature verification.
+Webhook subscriptions are managed through the [Rynko Dashboard](https://app.rynko.dev). The SDK provides read-only access to view webhooks and utilities for signature verification.
 
 ### List Webhooks
 
 ```typescript
-const { data: webhooks, meta } = await renderbase.webhooks.list();
+const { data: webhooks, meta } = await rynko.webhooks.list();
 
 for (const webhook of webhooks) {
   console.log(`${webhook.id}: ${webhook.url}`);
@@ -414,7 +414,7 @@ for (const webhook of webhooks) {
 ### Get Webhook Details
 
 ```typescript
-const webhook = await renderbase.webhooks.get('wh_abc123');
+const webhook = await rynko.webhooks.get('wh_abc123');
 
 console.log('URL:', webhook.url);
 console.log('Events:', webhook.events);
@@ -424,15 +424,15 @@ console.log('Description:', webhook.description);
 
 ### Verify Webhook Signatures
 
-When receiving webhooks, always verify the signature to ensure the request came from Renderbase:
+When receiving webhooks, always verify the signature to ensure the request came from Rynko:
 
 ```typescript
-import { verifyWebhookSignature, WebhookSignatureError } from '@renderbase/sdk';
+import { verifyWebhookSignature, WebhookSignatureError } from '@rynko/sdk';
 
 // Express.js example
-app.post('/webhooks/renderbase', express.raw({ type: 'application/json' }), (req, res) => {
-  const signature = req.headers['x-renderbase-signature'] as string;
-  const timestamp = req.headers['x-renderbase-timestamp'] as string;
+app.post('/webhooks/rynko', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-rynko-signature'] as string;
+  const timestamp = req.headers['x-rynko-timestamp'] as string;
 
   try {
     const event = verifyWebhookSignature({
@@ -492,21 +492,21 @@ app.post('/webhooks/renderbase', express.raw({ type: 'application/json' }), (req
 
 #### Webhook Headers
 
-Renderbase sends these headers with each webhook request:
+Rynko sends these headers with each webhook request:
 
 | Header | Description |
 |--------|-------------|
-| `X-Renderbase-Signature` | HMAC-SHA256 signature (format: `v1=<hex>`) |
-| `X-Renderbase-Timestamp` | Unix timestamp when the webhook was sent |
-| `X-Renderbase-Event-Id` | Unique event identifier |
-| `X-Renderbase-Event-Type` | Event type (e.g., `document.generated`) |
+| `X-Rynko-Signature` | HMAC-SHA256 signature (format: `v1=<hex>`) |
+| `X-Rynko-Timestamp` | Unix timestamp when the webhook was sent |
+| `X-Rynko-Event-Id` | Unique event identifier |
+| `X-Rynko-Event-Type` | Event type (e.g., `document.generated`) |
 
 #### Low-Level Signature Utilities
 
 For advanced use cases, you can use the low-level signature utilities:
 
 ```typescript
-import { parseSignatureHeader, computeSignature } from '@renderbase/sdk';
+import { parseSignatureHeader, computeSignature } from '@rynko/sdk';
 
 // Parse the signature header
 const { timestamp, signatures } = parseSignatureHeader(signatureHeader);
@@ -521,12 +521,12 @@ const isValid = signatures.some(sig => sig === expectedSignature);
 ## Configuration
 
 ```typescript
-const renderbase = new Renderbase({
+const rynko = new Rynko({
   // Required: Your API key
-  apiKey: process.env.RENDERBASE_API_KEY!,
+  apiKey: process.env.RYNKO_API_KEY!,
 
-  // Optional: Custom base URL (default: https://api.renderbase.dev)
-  baseUrl: 'https://api.renderbase.dev',
+  // Optional: Custom base URL (default: https://api.rynko.dev)
+  baseUrl: 'https://api.rynko.dev',
 
   // Optional: Request timeout in milliseconds (default: 30000)
   timeout: 30000,
@@ -544,33 +544,33 @@ We recommend using environment variables for configuration:
 
 ```bash
 # .env
-RENDERBASE_API_KEY=your_api_key_here
+RYNKO_API_KEY=your_api_key_here
 WEBHOOK_SECRET=your_webhook_secret_here
 ```
 
 ```typescript
 import 'dotenv/config';
-import { Renderbase } from '@renderbase/sdk';
+import { Rynko } from '@rynko/sdk';
 
-const renderbase = new Renderbase({
-  apiKey: process.env.RENDERBASE_API_KEY!,
+const rynko = new Rynko({
+  apiKey: process.env.RYNKO_API_KEY!,
 });
 ```
 
 ## Error Handling
 
 ```typescript
-import { Renderbase, RenderbaseError } from '@renderbase/sdk';
+import { Rynko, RynkoError } from '@rynko/sdk';
 
-const renderbase = new Renderbase({ apiKey: 'your_api_key' });
+const rynko = new Rynko({ apiKey: 'your_api_key' });
 
 try {
-  const job = await renderbase.documents.generatePdf({
+  const job = await rynko.documents.generatePdf({
     templateId: 'invalid_template',
     variables: {},
   });
 } catch (error) {
-  if (error instanceof RenderbaseError) {
+  if (error instanceof RynkoError) {
     console.error('API Error:', error.message);
     console.error('Error Code:', error.code);
     console.error('Status Code:', error.statusCode);
@@ -621,15 +621,15 @@ This SDK is written in TypeScript and includes comprehensive type definitions:
 
 ```typescript
 import {
-  Renderbase,
-  RenderbaseError,
+  Rynko,
+  RynkoError,
   verifyWebhookSignature,
   WebhookSignatureError,
-} from '@renderbase/sdk';
+} from '@rynko/sdk';
 
 import type {
   // Configuration
-  RenderbaseConfig,
+  RynkoConfig,
 
   // Document types
   GenerateDocumentOptions,
@@ -657,7 +657,7 @@ import type {
 
   // User types
   User,
-} from '@renderbase/sdk';
+} from '@rynko/sdk';
 
 // Type-safe document generation
 const options: GenerateDocumentOptions = {
@@ -670,7 +670,7 @@ const options: GenerateDocumentOptions = {
   workspaceId: 'ws_abc123',  // Optional
 };
 
-const result: GenerateDocumentResponse = await renderbase.documents.generate(options);
+const result: GenerateDocumentResponse = await rynko.documents.generate(options);
 ```
 
 ## API Reference
@@ -729,7 +729,7 @@ MIT
 
 ## Support
 
-- **Documentation**: https://docs.renderbase.dev/sdk/node
-- **API Reference**: https://docs.renderbase.dev/api
-- **GitHub Issues**: https://github.com/renderbase/sdk-node/issues
-- **Email**: support@renderbase.dev
+- **Documentation**: https://docs.rynko.dev/sdk/node
+- **API Reference**: https://docs.rynko.dev/api
+- **GitHub Issues**: https://github.com/rynko/sdk-node/issues
+- **Email**: support@rynko.dev

@@ -1,38 +1,38 @@
 /**
- * Renderbase Node.js SDK
+ * Rynko Node.js SDK
  *
- * Official SDK for the Renderbase document generation platform.
+ * Official SDK for the Rynko document generation platform.
  *
  * @example
  * ```typescript
- * import { Renderbase } from '@renderbase/sdk';
+ * import { Rynko } from '@rynko/sdk';
  *
- * const renderbase = new Renderbase({
- *   apiKey: process.env.RENDERBASE_API_KEY!,
+ * const rynko = new Rynko({
+ *   apiKey: process.env.RYNKO_API_KEY!,
  * });
  *
  * // Generate a PDF
- * const result = await renderbase.documents.generate({
+ * const result = await rynko.documents.generate({
  *   templateId: 'tmpl_invoice',
  *   format: 'pdf',
  *   variables: { invoiceNumber: 'INV-001' },
  * });
  *
  * // Generate an Excel file
- * const report = await renderbase.documents.generateExcel({
+ * const report = await rynko.documents.generateExcel({
  *   templateId: 'tmpl_report',
  *   variables: { reportDate: '2025-01-15' },
  * });
  *
  * // List templates
- * const { data: templates } = await renderbase.templates.list({ type: 'pdf' });
+ * const { data: templates } = await rynko.templates.list({ type: 'pdf' });
  *
  * // Verify webhook signature
- * import { verifyWebhookSignature } from '@renderbase/sdk';
+ * import { verifyWebhookSignature } from '@rynko/sdk';
  *
  * const event = verifyWebhookSignature({
  *   payload: requestBody,
- *   signature: headers['x-renderbase-signature'],
+ *   signature: headers['x-rynko-signature'],
  *   secret: process.env.WEBHOOK_SECRET!,
  * });
  * ```
@@ -41,7 +41,7 @@
  */
 
 // Main client
-export { Renderbase, createClient } from './client';
+export { Rynko, createClient } from './client';
 
 // Resources
 export { DocumentsResource } from './resources/documents';
@@ -49,7 +49,7 @@ export { TemplatesResource } from './resources/templates';
 export { WebhooksResource } from './resources/webhooks';
 
 // Utilities
-export { RenderbaseError } from './utils/http';
+export { RynkoError } from './utils/http';
 export {
   verifyWebhookSignature,
   parseSignatureHeader,
@@ -59,7 +59,7 @@ export {
 
 // Types
 export type {
-  RenderbaseConfig,
+  RynkoConfig,
   RetryConfig,
   // Document types
   GenerateDocumentOptions,

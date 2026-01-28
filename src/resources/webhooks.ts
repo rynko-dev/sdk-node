@@ -2,7 +2,7 @@
  * Webhooks Resource
  *
  * Provides read-only access to webhook subscriptions and signature verification.
- * Webhook subscriptions are managed through the Renderbase dashboard.
+ * Webhook subscriptions are managed through the Rynko dashboard.
  */
 
 import type { HttpClient } from '../utils/http';
@@ -19,7 +19,7 @@ export class WebhooksResource {
    *
    * @example
    * ```typescript
-   * const webhook = await renderbase.webhooks.get('wh_abc123');
+   * const webhook = await rynko.webhooks.get('wh_abc123');
    * console.log('Events:', webhook.events);
    * ```
    */
@@ -35,7 +35,7 @@ export class WebhooksResource {
    *
    * @example
    * ```typescript
-   * const { data } = await renderbase.webhooks.list();
+   * const { data } = await rynko.webhooks.list();
    * console.log('Active webhooks:', data.filter(w => w.isActive).length);
    * ```
    */

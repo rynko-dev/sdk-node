@@ -1,5 +1,5 @@
 /**
- * HTTP Client for Renderbase SDK
+ * HTTP Client for Rynko SDK
  */
 
 import type { ApiError, RetryConfig } from '../types';
@@ -124,12 +124,12 @@ export class HttpClient {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${this.config.apiKey}`,
-      'User-Agent': '@renderbase/sdk/1.0.0',
+      'User-Agent': '@rynko/sdk/1.0.0',
       ...this.config.headers,
     };
 
     const maxAttempts = this.retryConfig?.maxAttempts ?? 1;
-    let lastError: RenderbaseError | null = null;
+    let lastError: RynkoError | null = null;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const controller = new AbortController();
@@ -153,7 +153,7 @@ export class HttpClient {
           // Store the error in case this is the last attempt
           const data = await response.json().catch(() => ({}));
           const error = data as ApiError;
-          lastError = new RenderbaseError(
+          lastError = new RynkoError(
             error.message || `HTTP ${response.status}`,
             error.error || 'ApiError',
             response.status
@@ -170,7 +170,7 @@ export class HttpClient {
 
         if (!response.ok) {
           const error = data as ApiError;
-          throw new RenderbaseError(
+          throw new RynkoError(
             error.message || `HTTP ${response.status}`,
             error.error || 'ApiError',
             response.status
@@ -181,7 +181,7 @@ export class HttpClient {
       } catch (error) {
         clearTimeout(timeoutId);
 
-        if (error instanceof RenderbaseError) {
+        if (error instanceof RynkoError) {
           // If it's a retryable error and we have attempts left, the loop will continue
           // Otherwise, throw the error
           if (!this.shouldRetry(error.statusCode) || attempt >= maxAttempts - 1) {
@@ -195,12 +195,12 @@ export class HttpClient {
 
         if (error instanceof Error) {
           if (error.name === 'AbortError') {
-            throw new RenderbaseError('Request timeout', 'TimeoutError', 408);
+            throw new RynkoError('Request timeout', 'TimeoutError', 408);
           }
-          throw new RenderbaseError(error.message, 'NetworkError', 0);
+          throw new RynkoError(error.message, 'NetworkError', 0);
         }
 
-        throw new RenderbaseError('Unknown error', 'UnknownError', 0);
+        throw new RynkoError('Unknown error', 'UnknownError', 0);
       }
     }
 
@@ -209,7 +209,7 @@ export class HttpClient {
       throw lastError;
     }
 
-    throw new RenderbaseError('Request failed after retries', 'RetryExhausted', 0);
+    throw new RynkoError('Request failed after retries', 'RetryExhausted', 0);
   }
 
   async get<T>(path: string, query?: Record<string, unknown>): Promise<T> {
@@ -233,13 +233,13 @@ export class HttpClient {
   }
 }
 
-export class RenderbaseError extends Error {
+export class RynkoError extends Error {
   code: string;
   statusCode: number;
 
   constructor(message: string, code: string, statusCode: number) {
     super(message);
-    this.name = 'RenderbaseError';
+    this.name = 'RynkoError';
     this.code = code;
     this.statusCode = statusCode;
   }

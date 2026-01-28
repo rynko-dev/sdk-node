@@ -1,19 +1,19 @@
 # Node.js SDK Deployment Guide
 
-This guide covers publishing and maintaining the Renderbase Node.js SDK (`@renderbase/sdk`).
+This guide covers publishing and maintaining the Rynko Node.js SDK (`@rynko/sdk`).
 
 ## Prerequisites
 
 - Node.js 18.x or higher
-- npm account with publish access to `@renderbase` scope
+- npm account with publish access to `@rynko` scope
 - GitHub repository access
 
 ## Package Overview
 
 ```
-@renderbase/sdk
+@rynko/sdk
 ├── src/
-│   ├── client.ts        # Main Renderbase client
+│   ├── client.ts        # Main Rynko client
 │   ├── index.ts         # Public exports
 │   ├── types/           # TypeScript type definitions
 │   ├── utils/           # HTTP client, webhook verification
@@ -61,7 +61,7 @@ npm run lint
 
 1. **Create npm Organization** (if not exists):
    ```bash
-   npm org create renderbase
+   npm org create rynko
    ```
 
 2. **Login to npm**:
@@ -183,18 +183,18 @@ Maintain `CHANGELOG.md` with:
 
 Users must set:
 ```bash
-RENDERBASE_API_KEY=your_api_key
+RYNKO_API_KEY=your_api_key
 ```
 
 ### SDK Configuration
 
 ```typescript
-import { Renderbase } from '@renderbase/sdk';
+import { Rynko } from '@rynko/sdk';
 
-const client = new Renderbase({
-  apiKey: process.env.RENDERBASE_API_KEY,
+const client = new Rynko({
+  apiKey: process.env.RYNKO_API_KEY,
   // Optional
-  baseUrl: 'https://api.renderbase.dev',
+  baseUrl: 'https://api.rynko.dev',
   timeout: 30000,
 });
 ```
@@ -203,7 +203,7 @@ const client = new Renderbase({
 
 ### Backend Requirements
 
-The SDK requires these Renderbase API endpoints:
+The SDK requires these Rynko API endpoints:
 
 | Endpoint | SDK Method |
 |----------|------------|
@@ -236,8 +236,8 @@ npm test
 
 Create `.env.test`:
 ```bash
-RENDERBASE_API_KEY=test_api_key
-RENDERBASE_BASE_URL=http://localhost:3000
+RYNKO_API_KEY=test_api_key
+RYNKO_BASE_URL=http://localhost:3000
 ```
 
 Run integration tests:
@@ -248,9 +248,9 @@ npm run test:integration
 ### Manual Testing
 
 ```typescript
-import { Renderbase } from '@renderbase/sdk';
+import { Rynko } from '@rynko/sdk';
 
-const client = new Renderbase({
+const client = new Rynko({
   apiKey: 'your_test_key',
   baseUrl: 'http://localhost:3000',
 });
@@ -309,8 +309,8 @@ Update `README.md` with:
 ### Support Channels
 
 - GitHub Issues: Report bugs and feature requests
-- Email: sdk-support@renderbase.dev
-- Documentation: https://docs.renderbase.dev/sdk/node
+- Email: sdk-support@rynko.dev
+- Documentation: https://docs.rynko.dev/sdk/node
 
 ## Security
 
@@ -330,4 +330,4 @@ npm update
 
 ### Vulnerability Disclosure
 
-Report security issues to: security@renderbase.dev
+Report security issues to: security@rynko.dev

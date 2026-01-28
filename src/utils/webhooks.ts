@@ -8,7 +8,7 @@ import type { WebhookEvent } from '../types';
 export interface VerifyWebhookOptions {
   /** Raw request body as string */
   payload: string;
-  /** Signature from X-Renderbase-Signature header */
+  /** Signature from X-Rynko-Signature header */
   signature: string;
   /** Webhook secret from your subscription */
   secret: string;
@@ -61,10 +61,10 @@ export function computeSignature(
  *
  * @example
  * ```typescript
- * import { verifyWebhookSignature } from '@renderbase/sdk';
+ * import { verifyWebhookSignature } from '@rynko/sdk';
  *
- * app.post('/webhooks/renderbase', (req, res) => {
- *   const signature = req.headers['x-renderbase-signature'];
+ * app.post('/webhooks/rynko', (req, res) => {
+ *   const signature = req.headers['x-rynko-signature'];
  *
  *   try {
  *     const event = verifyWebhookSignature({
