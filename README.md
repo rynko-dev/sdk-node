@@ -731,5 +731,5 @@ MIT
 
 - **Documentation**: https://docs.rynko.dev/sdk/node
 - **API Reference**: https://docs.rynko.dev/api
-- **GitHub Issues**: https://github.com/rynko/sdk-node/issues
+- **GitHub Issues**: https://github.com/rynko-dev/sdk-node/issues
 - **Email**: support@rynko.dev
