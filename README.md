@@ -718,6 +718,17 @@ const result: GenerateDocumentResponse = await rynko.documents.generate(options)
 | `parseSignatureHeader(header)` | `{ timestamp: string; signatures: string[] }` | Parse signature header |
 | `computeSignature(timestamp, payload, secret)` | `string` | Compute expected signature |
 
+## Examples
+
+See the [`examples/`](./examples) directory for runnable code samples:
+
+- [basic-generate.ts](./examples/basic-generate.ts) - Generate a PDF and wait for completion
+- [batch-generate.ts](./examples/batch-generate.ts) - Generate multiple documents
+- [webhook-handler.ts](./examples/webhook-handler.ts) - Express webhook endpoint
+- [error-handling.ts](./examples/error-handling.ts) - Handle API errors
+
+For complete project templates with full setup, see the [developer-resources](https://github.com/rynko-dev/developer-resources) repository.
+
 ## Requirements
 
 - Node.js 18.0.0 or higher
@@ -731,5 +742,6 @@ MIT
 
 - **Documentation**: https://docs.rynko.dev/sdk/node
 - **API Reference**: https://docs.rynko.dev/api
+- **Examples**: https://github.com/rynko-dev/developer-resources
 - **GitHub Issues**: https://github.com/rynko-dev/sdk-node/issues
 - **Email**: support@rynko.dev
