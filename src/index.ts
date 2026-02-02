@@ -69,6 +69,10 @@ export type {
   DocumentJob,
   DocumentJobStatus,
   ListDocumentJobsOptions,
+  BatchDocumentSpec,
+  // Metadata types
+  MetadataValue,
+  DocumentMetadata,
   // Template types
   Template,
   TemplateVariable,
@@ -77,6 +81,8 @@ export type {
   WebhookSubscription,
   WebhookEventType,
   WebhookEvent,
+  DocumentWebhookData,
+  BatchWebhookData,
   // Response types
   ApiResponse,
   PaginationMeta,

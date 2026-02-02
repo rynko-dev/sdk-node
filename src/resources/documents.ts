@@ -29,9 +29,18 @@ export class DocumentsResource {
    *     invoiceNumber: 'INV-001',
    *     amount: 150.00,
    *   },
+   *   // Optional: attach metadata for tracking
+   *   metadata: {
+   *     orderId: 'ord_12345',
+   *     customerId: 'cust_67890',
+   *   },
    * });
    * console.log('Job ID:', result.jobId);
-   * console.log('Download URL:', result.downloadUrl);
+   *
+   * // Metadata is returned in job status and webhook payloads
+   * const job = await rynko.documents.waitForCompletion(result.jobId);
+   * console.log('Download URL:', job.downloadUrl);
+   * console.log('Metadata:', job.metadata); // { orderId: 'ord_12345', ... }
    * ```
    */
   async generate(options: GenerateDocumentOptions): Promise<GenerateDocumentResponse> {
@@ -90,9 +99,20 @@ export class DocumentsResource {
    * const result = await rynko.documents.generateBatch({
    *   templateId: 'tmpl_invoice',
    *   format: 'pdf',
+   *   // Optional: batch-level metadata
+   *   metadata: {
+   *     batchRunId: 'run_20250115',
+   *     triggeredBy: 'scheduled_job',
+   *   },
    *   documents: [
-   *     { variables: { invoiceNumber: 'INV-001', total: 99.99 } },
-   *     { variables: { invoiceNumber: 'INV-002', total: 149.99 } },
+   *     {
+   *       variables: { invoiceNumber: 'INV-001', total: 99.99 },
+   *       metadata: { rowNumber: 1 },  // per-document metadata
+   *     },
+   *     {
+   *       variables: { invoiceNumber: 'INV-002', total: 149.99 },
+   *       metadata: { rowNumber: 2 },
+   *     },
    *   ],
    * });
    * console.log('Batch ID:', result.batchId);

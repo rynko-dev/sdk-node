@@ -1,7 +1,8 @@
 /**
  * Webhook Handler Example
  *
- * This example shows how to verify and handle Rynko webhook events.
+ * This example shows how to verify and handle Rynko webhook events,
+ * including accessing custom metadata attached to documents.
  *
  * Usage:
  *   WEBHOOK_SECRET=your_secret npx tsx examples/webhook-handler.ts
@@ -10,11 +11,16 @@
  *   curl -X POST http://localhost:3000/webhooks/rynko \
  *     -H "Content-Type: application/json" \
  *     -H "X-Rynko-Signature: t=...,v1=..." \
- *     -d '{"type":"document.generated","id":"evt_123",...}'
+ *     -d '{"type":"document.completed","id":"evt_123",...}'
  */
 
 import express from 'express';
-import { verifyWebhookSignature, WebhookSignatureError } from '../src';
+import {
+  verifyWebhookSignature,
+  WebhookSignatureError,
+  type DocumentWebhookData,
+  type BatchWebhookData,
+} from '../src';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -37,20 +43,52 @@ app.post('/webhooks/rynko', (req, res) => {
     console.log(`Received: ${event.type} (${event.id})`);
 
     switch (event.type) {
-      case 'document.generated':
-        const generated = event.data as { jobId: string; downloadUrl: string };
-        console.log(`Document ready: ${generated.downloadUrl}`);
-        break;
+      case 'document.completed': {
+        // Use typed interface for document events
+        const data = event.data as DocumentWebhookData;
+        console.log(`Document ready!`);
+        console.log(`  Job ID: ${data.jobId}`);
+        console.log(`  Download URL: ${data.downloadUrl}`);
 
-      case 'document.failed':
-        const failed = event.data as { jobId: string; error: string };
-        console.error(`Document failed: ${failed.error}`);
+        // Access custom metadata passed in the generate request
+        if (data.metadata) {
+          console.log(`  Metadata:`, data.metadata);
+          console.log(`  Order ID: ${data.metadata.orderId}`);
+          console.log(`  Customer ID: ${data.metadata.customerId}`);
+          // Use metadata to update your database, trigger workflows, etc.
+        }
         break;
+      }
 
-      case 'document.downloaded':
-        const downloaded = event.data as { jobId: string };
-        console.log(`Document downloaded: ${downloaded.jobId}`);
+      case 'document.failed': {
+        const data = event.data as DocumentWebhookData;
+        console.error(`Document generation failed!`);
+        console.error(`  Job ID: ${data.jobId}`);
+        console.error(`  Error: ${data.errorMessage}`);
+        console.error(`  Error Code: ${data.errorCode}`);
+
+        // Access metadata to identify which order/customer failed
+        if (data.metadata) {
+          console.error(`  Failed for order: ${data.metadata.orderId}`);
+        }
         break;
+      }
+
+      case 'batch.completed': {
+        // Use typed interface for batch events
+        const data = event.data as BatchWebhookData;
+        console.log(`Batch completed!`);
+        console.log(`  Batch ID: ${data.batchId}`);
+        console.log(`  Total: ${data.totalJobs}`);
+        console.log(`  Completed: ${data.completedJobs}`);
+        console.log(`  Failed: ${data.failedJobs}`);
+
+        // Access batch-level metadata
+        if (data.metadata) {
+          console.log(`  Batch run ID: ${data.metadata.batchRunId}`);
+        }
+        break;
+      }
     }
 
     res.status(200).json({ received: true });
@@ -68,4 +106,9 @@ app.post('/webhooks/rynko', (req, res) => {
 app.listen(port, () => {
   console.log(`Webhook server listening on http://localhost:${port}`);
   console.log(`Endpoint: POST /webhooks/rynko`);
+  console.log();
+  console.log('Supported event types:');
+  console.log('  - document.completed: Document was successfully generated');
+  console.log('  - document.failed: Document generation failed');
+  console.log('  - batch.completed: Batch of documents completed');
 });

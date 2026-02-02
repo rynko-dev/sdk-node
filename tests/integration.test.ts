@@ -184,6 +184,67 @@ async function runTests(): Promise<void> {
       });
     }
 
+    // --- PDF Generation with Metadata ---
+    let metadataJobId: string | null = null;
+    const testMetadata = {
+      orderId: 'ord_test_12345',
+      customerId: 'cust_test_67890',
+      priority: 1,
+      isTest: true,
+    };
+
+    await test('documents.generatePdf() - Generate PDF with metadata', async () => {
+      const job = await client.documents.generatePdf({
+        templateId: templateId!,
+        variables: templateVariables,
+        metadata: testMetadata,
+      });
+
+      if (!job.jobId || job.status !== 'queued') {
+        throw new Error('Invalid job response');
+      }
+
+      metadataJobId = job.jobId;
+      console.log(`  Job ID: ${metadataJobId}`);
+      console.log(`  Status: ${job.status}`);
+      console.log(`  Metadata sent: ${JSON.stringify(testMetadata)}`);
+    });
+
+    if (metadataJobId) {
+      await test('documents.waitForCompletion() - Verify metadata in completed job', async () => {
+        const completed = await client.documents.waitForCompletion(metadataJobId!, {
+          pollInterval: 1000,
+          timeout: 60000,
+        });
+
+        if (completed.status !== 'completed' && completed.status !== 'failed') {
+          throw new Error(`Job not finished: ${completed.status}`);
+        }
+
+        console.log(`  Final status: ${completed.status}`);
+
+        // Verify metadata is returned
+        if (!completed.metadata) {
+          throw new Error('Metadata not returned in completed job');
+        }
+
+        if (completed.metadata.orderId !== testMetadata.orderId) {
+          throw new Error(`Metadata orderId mismatch: expected ${testMetadata.orderId}, got ${completed.metadata.orderId}`);
+        }
+
+        if (completed.metadata.customerId !== testMetadata.customerId) {
+          throw new Error(`Metadata customerId mismatch: expected ${testMetadata.customerId}, got ${completed.metadata.customerId}`);
+        }
+
+        if (completed.metadata.priority !== testMetadata.priority) {
+          throw new Error(`Metadata priority mismatch: expected ${testMetadata.priority}, got ${completed.metadata.priority}`);
+        }
+
+        console.log(`  Metadata returned: ${JSON.stringify(completed.metadata)}`);
+        console.log(`  ✓ All metadata fields verified`);
+      });
+    }
+
     // --- Excel Generation ---
     let excelJobId: string | null = null;
 

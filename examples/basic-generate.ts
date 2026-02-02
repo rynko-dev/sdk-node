@@ -28,13 +28,20 @@ async function main() {
   const template = templates[0];
   console.log(`Using template: ${template.name} (${template.id})`);
 
-  // Queue document generation
+  // Queue document generation with metadata for tracking
+  // Metadata is returned in job status and webhook payloads
   const job = await client.documents.generatePdf({
     templateId: template.id,
     variables: {
       // Use template's default values or provide your own
       title: 'Example Document',
       date: new Date().toISOString().split('T')[0],
+    },
+    // Optional: attach metadata for tracking/correlation
+    metadata: {
+      orderId: 'ord_12345',
+      customerId: 'cust_67890',
+      priority: 1,
     },
   });
 
@@ -51,6 +58,12 @@ async function main() {
   if (completed.status === 'completed') {
     console.log('Document generated successfully!');
     console.log(`Download URL: ${completed.downloadUrl}`);
+
+    // Access metadata from the completed job
+    if (completed.metadata) {
+      console.log('Metadata:', completed.metadata);
+      console.log(`Order ID: ${completed.metadata.orderId}`);
+    }
   } else {
     console.error(`Generation failed: ${completed.errorMessage}`);
   }

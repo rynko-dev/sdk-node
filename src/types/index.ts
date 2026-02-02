@@ -36,6 +36,12 @@ export interface RynkoConfig {
 // Document Types
 // ============================================
 
+/** Metadata value types (flat structure, no nested objects) */
+export type MetadataValue = string | number | boolean | null;
+
+/** Custom metadata for tracking and correlation */
+export type DocumentMetadata = Record<string, MetadataValue>;
+
 export interface GenerateDocumentOptions {
   /** Template ID to use */
   templateId: string;
@@ -47,12 +53,26 @@ export interface GenerateDocumentOptions {
   filename?: string;
   /** Webhook URL to receive completion notification */
   webhookUrl?: string;
-  /** Custom metadata to pass through to webhook */
-  metadata?: Record<string, unknown>;
+  /**
+   * Custom metadata to pass through to API responses and webhooks.
+   * Must be a flat object (no nested objects). Max size: 10KB.
+   * @example { orderId: 'ord_123', customerId: 'cust_456' }
+   */
+  metadata?: DocumentMetadata;
   /** Use draft version instead of published version (for testing) */
   useDraft?: boolean;
   /** Force use of purchased credits instead of free quota */
   useCredit?: boolean;
+}
+
+/** Document specification for batch generation */
+export interface BatchDocumentSpec {
+  /** Template variables for this document */
+  variables: Record<string, unknown>;
+  /** Custom filename (without extension) */
+  filename?: string;
+  /** Document-specific metadata */
+  metadata?: DocumentMetadata;
 }
 
 export interface GenerateBatchOptions {
@@ -60,12 +80,15 @@ export interface GenerateBatchOptions {
   templateId: string;
   /** Output format */
   format: 'pdf' | 'excel' | 'csv';
-  /** List of variable sets (one per document) - each object contains the variables for that document */
-  documents: Record<string, unknown>[];
+  /** List of document specifications */
+  documents: BatchDocumentSpec[];
   /** Webhook URL to receive batch completion notification */
   webhookUrl?: string;
-  /** Custom metadata for the batch */
-  metadata?: Record<string, unknown>;
+  /**
+   * Batch-level metadata (applies to the batch).
+   * Must be a flat object (no nested objects). Max size: 10KB.
+   */
+  metadata?: DocumentMetadata;
   /** Use draft version instead of published version (for testing) */
   useDraft?: boolean;
   /** Force use of purchased credits instead of free quota */
@@ -129,8 +152,8 @@ export interface DocumentJob {
   errorMessage?: string;
   /** Error code (if failed) */
   errorCode?: string;
-  /** Custom metadata */
-  metadata?: Record<string, unknown>;
+  /** Custom metadata passed in the generate request */
+  metadata?: DocumentMetadata;
   /** Whether a webhook was configured for this job */
   hasWebhook?: boolean;
   /** Whether webhook was successfully delivered */
@@ -220,15 +243,57 @@ export interface WebhookSubscription {
 }
 
 export type WebhookEventType =
-  | 'document.generated'
+  | 'document.completed'
   | 'document.failed'
-  | 'document.downloaded';
+  | 'batch.completed';
 
-export interface WebhookEvent {
+/** Data payload for document webhook events */
+export interface DocumentWebhookData {
+  /** Job ID */
+  jobId: string;
+  /** Job status */
+  status: DocumentJobStatus;
+  /** Template ID used */
+  templateId: string;
+  /** Output format */
+  format: 'pdf' | 'excel' | 'csv';
+  /** Signed download URL (if completed) */
+  downloadUrl?: string;
+  /** File size in bytes (if completed) */
+  fileSize?: number;
+  /** Error message (if failed) */
+  errorMessage?: string;
+  /** Error code (if failed) */
+  errorCode?: string;
+  /** Custom metadata passed in the generate request */
+  metadata?: Record<string, string | number | boolean | null>;
+}
+
+/** Data payload for batch webhook events */
+export interface BatchWebhookData {
+  /** Batch ID */
+  batchId: string;
+  /** Batch status */
+  status: string;
+  /** Template ID used */
+  templateId: string;
+  /** Output format */
+  format: 'pdf' | 'excel' | 'csv';
+  /** Total jobs in batch */
+  totalJobs: number;
+  /** Completed jobs count */
+  completedJobs: number;
+  /** Failed jobs count */
+  failedJobs: number;
+  /** Custom metadata passed in the batch request */
+  metadata?: Record<string, string | number | boolean | null>;
+}
+
+export interface WebhookEvent<T = DocumentWebhookData | BatchWebhookData> {
   id: string;
   type: WebhookEventType;
   timestamp: string;
-  data: Record<string, unknown>;
+  data: T;
 }
 
 // ============================================
