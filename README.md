@@ -449,14 +449,22 @@ app.post('/webhooks/rynko', express.raw({ type: 'application/json' }), (req, res
 
     switch (event.type) {
       case 'document.generated':
-        const { jobId, downloadUrl, templateId } = event.data;
+        const { jobId, downloadUrl, templateId, metadata } = event.data;
         console.log(`Document ${jobId} ready: ${downloadUrl}`);
+        // Access metadata you passed during generation
+        if (metadata) {
+          console.log(`Order ID: ${metadata.orderId}`);
+        }
         // Download or process the document
         break;
 
       case 'document.failed':
-        const { jobId: failedJobId, error, errorCode } = event.data;
+        const { jobId: failedJobId, error, errorCode, metadata: failedMeta } = event.data;
         console.error(`Document ${failedJobId} failed: ${error}`);
+        // Access metadata for correlation
+        if (failedMeta) {
+          console.log(`Failed order: ${failedMeta.orderId}`);
+        }
         // Handle failure (retry, notify user, etc.)
         break;
 
@@ -486,8 +494,8 @@ app.post('/webhooks/rynko', express.raw({ type: 'application/json' }), (req, res
 
 | Event | Description | Payload |
 |-------|-------------|---------|
-| `document.generated` | Document successfully generated | `jobId`, `templateId`, `format`, `downloadUrl`, `fileSize` |
-| `document.failed` | Document generation failed | `jobId`, `templateId`, `error`, `errorCode` |
+| `document.generated` | Document successfully generated | `jobId`, `templateId`, `format`, `downloadUrl`, `fileSize`, `metadata` |
+| `document.failed` | Document generation failed | `jobId`, `templateId`, `error`, `errorCode`, `metadata` |
 | `document.downloaded` | Document was downloaded | `jobId`, `downloadedAt` |
 
 #### Webhook Headers
