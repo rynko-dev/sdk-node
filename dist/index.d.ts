@@ -25,6 +25,10 @@ interface RynkoConfig {
     /** Retry configuration for failed requests */
     retry?: RetryConfig | false;
 }
+/** Metadata value types (flat structure, no nested objects) */
+type MetadataValue = string | number | boolean | null;
+/** Custom metadata for tracking and correlation */
+type DocumentMetadata = Record<string, MetadataValue>;
 interface GenerateDocumentOptions {
     /** Template ID to use */
     templateId: string;
@@ -36,24 +40,40 @@ interface GenerateDocumentOptions {
     filename?: string;
     /** Webhook URL to receive completion notification */
     webhookUrl?: string;
-    /** Custom metadata to pass through to webhook */
-    metadata?: Record<string, unknown>;
+    /**
+     * Custom metadata to pass through to API responses and webhooks.
+     * Must be a flat object (no nested objects). Max size: 10KB.
+     * @example { orderId: 'ord_123', customerId: 'cust_456' }
+     */
+    metadata?: DocumentMetadata;
     /** Use draft version instead of published version (for testing) */
     useDraft?: boolean;
     /** Force use of purchased credits instead of free quota */
     useCredit?: boolean;
+}
+/** Document specification for batch generation */
+interface BatchDocumentSpec {
+    /** Template variables for this document */
+    variables: Record<string, unknown>;
+    /** Custom filename (without extension) */
+    filename?: string;
+    /** Document-specific metadata */
+    metadata?: DocumentMetadata;
 }
 interface GenerateBatchOptions {
     /** Template ID to use */
     templateId: string;
     /** Output format */
     format: 'pdf' | 'excel' | 'csv';
-    /** List of variable sets (one per document) - each object contains the variables for that document */
-    documents: Record<string, unknown>[];
+    /** List of document specifications */
+    documents: BatchDocumentSpec[];
     /** Webhook URL to receive batch completion notification */
     webhookUrl?: string;
-    /** Custom metadata for the batch */
-    metadata?: Record<string, unknown>;
+    /**
+     * Batch-level metadata (applies to the batch).
+     * Must be a flat object (no nested objects). Max size: 10KB.
+     */
+    metadata?: DocumentMetadata;
     /** Use draft version instead of published version (for testing) */
     useDraft?: boolean;
     /** Force use of purchased credits instead of free quota */
@@ -114,8 +134,8 @@ interface DocumentJob {
     errorMessage?: string;
     /** Error code (if failed) */
     errorCode?: string;
-    /** Custom metadata */
-    metadata?: Record<string, unknown>;
+    /** Custom metadata passed in the generate request */
+    metadata?: DocumentMetadata;
     /** Whether a webhook was configured for this job */
     hasWebhook?: boolean;
     /** Whether webhook was successfully delivered */
@@ -185,12 +205,52 @@ interface WebhookSubscription {
     createdAt: string;
     updatedAt: string;
 }
-type WebhookEventType = 'document.generated' | 'document.failed' | 'document.downloaded';
-interface WebhookEvent {
+type WebhookEventType = 'document.completed' | 'document.failed' | 'batch.completed';
+/** Data payload for document webhook events */
+interface DocumentWebhookData {
+    /** Job ID */
+    jobId: string;
+    /** Job status */
+    status: DocumentJobStatus;
+    /** Template ID used */
+    templateId: string;
+    /** Output format */
+    format: 'pdf' | 'excel' | 'csv';
+    /** Signed download URL (if completed) */
+    downloadUrl?: string;
+    /** File size in bytes (if completed) */
+    fileSize?: number;
+    /** Error message (if failed) */
+    errorMessage?: string;
+    /** Error code (if failed) */
+    errorCode?: string;
+    /** Custom metadata passed in the generate request */
+    metadata?: Record<string, string | number | boolean | null>;
+}
+/** Data payload for batch webhook events */
+interface BatchWebhookData {
+    /** Batch ID */
+    batchId: string;
+    /** Batch status */
+    status: string;
+    /** Template ID used */
+    templateId: string;
+    /** Output format */
+    format: 'pdf' | 'excel' | 'csv';
+    /** Total jobs in batch */
+    totalJobs: number;
+    /** Completed jobs count */
+    completedJobs: number;
+    /** Failed jobs count */
+    failedJobs: number;
+    /** Custom metadata passed in the batch request */
+    metadata?: Record<string, string | number | boolean | null>;
+}
+interface WebhookEvent<T = DocumentWebhookData | BatchWebhookData> {
     id: string;
     type: WebhookEventType;
     timestamp: string;
-    data: Record<string, unknown>;
+    data: T;
 }
 interface ApiResponse<T> {
     success: boolean;
@@ -283,9 +343,18 @@ declare class DocumentsResource {
      *     invoiceNumber: 'INV-001',
      *     amount: 150.00,
      *   },
+     *   // Optional: attach metadata for tracking
+     *   metadata: {
+     *     orderId: 'ord_12345',
+     *     customerId: 'cust_67890',
+     *   },
      * });
      * console.log('Job ID:', result.jobId);
-     * console.log('Download URL:', result.downloadUrl);
+     *
+     * // Metadata is returned in job status and webhook payloads
+     * const job = await rynko.documents.waitForCompletion(result.jobId);
+     * console.log('Download URL:', job.downloadUrl);
+     * console.log('Metadata:', job.metadata); // { orderId: 'ord_12345', ... }
      * ```
      */
     generate(options: GenerateDocumentOptions): Promise<GenerateDocumentResponse>;
@@ -327,9 +396,20 @@ declare class DocumentsResource {
      * const result = await rynko.documents.generateBatch({
      *   templateId: 'tmpl_invoice',
      *   format: 'pdf',
+     *   // Optional: batch-level metadata
+     *   metadata: {
+     *     batchRunId: 'run_20250115',
+     *     triggeredBy: 'scheduled_job',
+     *   },
      *   documents: [
-     *     { variables: { invoiceNumber: 'INV-001', total: 99.99 } },
-     *     { variables: { invoiceNumber: 'INV-002', total: 149.99 } },
+     *     {
+     *       variables: { invoiceNumber: 'INV-001', total: 99.99 },
+     *       metadata: { rowNumber: 1 },  // per-document metadata
+     *     },
+     *     {
+     *       variables: { invoiceNumber: 'INV-002', total: 149.99 },
+     *       metadata: { rowNumber: 2 },
+     *     },
      *   ],
      * });
      * console.log('Batch ID:', result.batchId);
@@ -613,4 +693,4 @@ declare class WebhookSignatureError extends Error {
     constructor(message: string);
 }
 
-export { type ApiError, type ApiResponse, type DocumentJob, type DocumentJobStatus, DocumentsResource, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListDocumentJobsOptions, type ListTemplatesOptions, type PaginationMeta, type RetryConfig, Rynko, type RynkoConfig, RynkoError, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };
+export { type ApiError, type ApiResponse, type BatchDocumentSpec, type BatchWebhookData, type DocumentJob, type DocumentJobStatus, type DocumentMetadata, type DocumentWebhookData, DocumentsResource, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListDocumentJobsOptions, type ListTemplatesOptions, type MetadataValue, type PaginationMeta, type RetryConfig, Rynko, type RynkoConfig, RynkoError, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };
