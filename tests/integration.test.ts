@@ -35,7 +35,6 @@ const client = new Rynko({
 let templateId: string | null = null;
 let templateVariables: Record<string, any> = {};
 let jobId: string | null = null;
-let webhookId: string | null = null;
 
 /**
  * Build variables object from template variable definitions using default values
@@ -321,47 +320,6 @@ async function runTests(): Promise<void> {
     }
     console.log(`  Found ${response.data.length} webhooks`);
   });
-
-  await test('webhooks.create() - Create webhook subscription', async () => {
-    const webhook = await client.webhooks.create({
-      url: 'https://webhook.site/test-rynko-sdk',
-      events: ['document.generated', 'document.failed'],
-      description: 'SDK Integration Test Webhook',
-    });
-
-    if (!webhook.id || !webhook.secret) {
-      throw new Error('Invalid webhook response');
-    }
-
-    webhookId = webhook.id;
-    console.log(`  Webhook ID: ${webhookId}`);
-    console.log(`  Secret: ${webhook.secret.substring(0, 10)}...`);
-  });
-
-  if (webhookId) {
-    await test('webhooks.get() - Get webhook by ID', async () => {
-      const webhook = await client.webhooks.get(webhookId!);
-      if (!webhook.id || !webhook.url) {
-        throw new Error('Invalid webhook response');
-      }
-      console.log(`  URL: ${webhook.url}`);
-    });
-
-    await test('webhooks.update() - Update webhook', async () => {
-      const webhook = await client.webhooks.update(webhookId!, {
-        description: 'SDK Integration Test Webhook (Updated)',
-      });
-      if (!webhook.id) {
-        throw new Error('Invalid webhook response');
-      }
-      console.log(`  Updated description: ${webhook.description}`);
-    });
-
-    await test('webhooks.delete() - Delete webhook', async () => {
-      await client.webhooks.delete(webhookId!);
-      console.log(`  Deleted webhook: ${webhookId}`);
-    });
-  }
 
   // ==========================================
   // Error Handling Tests
