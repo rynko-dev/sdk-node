@@ -45,9 +45,10 @@ export class DocumentsResource {
    */
   async generate(options: GenerateDocumentOptions): Promise<GenerateDocumentResponse> {
     // Backend returns response directly (not wrapped)
+    // Automatically set source to identify SDK usage
     return this.http.post<GenerateDocumentResponse>(
       '/api/v1/documents/generate',
-      options
+      { ...options, source: 'sdk_node' }
     );
   }
 
@@ -120,9 +121,10 @@ export class DocumentsResource {
    */
   async generateBatch(options: GenerateBatchOptions): Promise<GenerateBatchResponse> {
     // Backend returns response directly (not wrapped)
+    // Automatically set source to identify SDK usage
     return this.http.post<GenerateBatchResponse>(
       '/api/v1/documents/generate/batch',
-      options
+      { ...options, source: 'sdk_node' }
     );
   }
 
