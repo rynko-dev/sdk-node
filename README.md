@@ -189,7 +189,6 @@ const job = await rynko.documents.generate({
 
   // Optional settings
   filename: 'contract-acme-2026',  // Custom filename (without extension)
-  workspaceId: 'ws_abc123',        // Generate in specific workspace
   webhookUrl: 'https://your-app.com/webhooks/document-ready',  // Webhook notification
   metadata: {                       // Custom metadata (passed to webhook)
     orderId: 'ORD-12345',
@@ -205,25 +204,31 @@ const job = await rynko.documents.generate({
 Generate multiple documents from a single template:
 
 ```typescript
-// Each object in the documents array contains variables for one document
+// Each object in the documents array requires a `variables` property
 const batch = await rynko.documents.generateBatch({
   templateId: 'tmpl_invoice',
   format: 'pdf',
   documents: [
     {
-      invoiceNumber: 'INV-001',
-      customerName: 'John Doe',
-      total: 150.00,
+      variables: {
+        invoiceNumber: 'INV-001',
+        customerName: 'John Doe',
+        total: 150.00,
+      },
     },
     {
-      invoiceNumber: 'INV-002',
-      customerName: 'Jane Smith',
-      total: 275.50,
+      variables: {
+        invoiceNumber: 'INV-002',
+        customerName: 'Jane Smith',
+        total: 275.50,
+      },
     },
     {
-      invoiceNumber: 'INV-003',
-      customerName: 'Bob Wilson',
-      total: 89.99,
+      variables: {
+        invoiceNumber: 'INV-003',
+        customerName: 'Bob Wilson',
+        total: 89.99,
+      },
     },
   ],
   webhookUrl: 'https://your-app.com/webhooks/batch-complete',
@@ -432,14 +437,15 @@ import { verifyWebhookSignature, WebhookSignatureError } from '@rynko/sdk';
 // Express.js example
 app.post('/webhooks/rynko', express.raw({ type: 'application/json' }), (req, res) => {
   const signature = req.headers['x-rynko-signature'] as string;
-  const timestamp = req.headers['x-rynko-timestamp'] as string;
 
   try {
+    // The signature header contains both timestamp and signature: t=<ts>,v1=<hex>
+    // Timestamp is validated automatically (default tolerance: 5 minutes)
     const event = verifyWebhookSignature({
       payload: req.body.toString(),
       signature,
-      timestamp,  // Optional but recommended for replay protection
       secret: process.env.WEBHOOK_SECRET!,
+      tolerance: 300,  // Optional: tolerance in seconds (default: 300)
     });
 
     // Process the verified event
@@ -459,8 +465,8 @@ app.post('/webhooks/rynko', express.raw({ type: 'application/json' }), (req, res
         break;
 
       case 'document.failed':
-        const { jobId: failedJobId, error, errorCode, metadata: failedMeta } = event.data;
-        console.error(`Document ${failedJobId} failed: ${error}`);
+        const { jobId: failedJobId, errorMessage, errorCode, metadata: failedMeta } = event.data;
+        console.error(`Document ${failedJobId} failed: ${errorMessage}`);
         // Access metadata for correlation
         if (failedMeta) {
           console.log(`Failed order: ${failedMeta.orderId}`);
@@ -468,9 +474,14 @@ app.post('/webhooks/rynko', express.raw({ type: 'application/json' }), (req, res
         // Handle failure (retry, notify user, etc.)
         break;
 
+      case 'batch.completed':
+        const { batchId, totalJobs, completedJobs, failedJobs } = event.data;
+        console.log(`Batch ${batchId} done: ${completedJobs}/${totalJobs} succeeded, ${failedJobs} failed`);
+        break;
+
       case 'document.downloaded':
-        const { jobId: downloadedJobId } = event.data;
-        console.log(`Document ${downloadedJobId} was downloaded`);
+        const { jobId: downloadedJobId, downloadedAt } = event.data;
+        console.log(`Document ${downloadedJobId} downloaded at ${downloadedAt}`);
         break;
 
       default:
@@ -495,8 +506,9 @@ app.post('/webhooks/rynko', express.raw({ type: 'application/json' }), (req, res
 | Event | Description | Payload |
 |-------|-------------|---------|
 | `document.generated` | Document successfully generated | `jobId`, `templateId`, `format`, `downloadUrl`, `fileSize`, `metadata` |
-| `document.failed` | Document generation failed | `jobId`, `templateId`, `error`, `errorCode`, `metadata` |
+| `document.failed` | Document generation failed | `jobId`, `templateId`, `errorMessage`, `errorCode`, `metadata` |
 | `document.downloaded` | Document was downloaded | `jobId`, `downloadedAt` |
+| `batch.completed` | Batch generation finished | `batchId`, `templateId`, `format`, `totalJobs`, `completedJobs`, `failedJobs`, `metadata` |
 
 #### Webhook Headers
 
@@ -504,7 +516,7 @@ Rynko sends these headers with each webhook request:
 
 | Header | Description |
 |--------|-------------|
-| `X-Rynko-Signature` | HMAC-SHA256 signature (format: `v1=<hex>`) |
+| `X-Rynko-Signature` | HMAC-SHA256 signature (format: `t=<timestamp>,v1=<hex>`) |
 | `X-Rynko-Timestamp` | Unix timestamp when the webhook was sent |
 | `X-Rynko-Event-Id` | Unique event identifier |
 | `X-Rynko-Event-Type` | Event type (e.g., `document.generated`) |
@@ -516,14 +528,14 @@ For advanced use cases, you can use the low-level signature utilities:
 ```typescript
 import { parseSignatureHeader, computeSignature } from '@rynko/sdk';
 
-// Parse the signature header
-const { timestamp, signatures } = parseSignatureHeader(signatureHeader);
+// Parse the signature header (format: t=<timestamp>,v1=<hex>)
+const { timestamp, signature } = parseSignatureHeader(signatureHeader);
 
 // Compute expected signature
 const expectedSignature = computeSignature(timestamp, payload, secret);
 
 // Compare signatures
-const isValid = signatures.some(sig => sig === expectedSignature);
+const isValid = signature === expectedSignature;
 ```
 
 ## Configuration
@@ -543,6 +555,17 @@ const rynko = new Rynko({
   headers: {
     'X-Custom-Header': 'value',
   },
+
+  // Optional: Retry configuration (enabled by default)
+  retry: {
+    maxAttempts: 5,           // Maximum retry attempts (default: 5)
+    initialDelayMs: 1000,     // Initial delay between retries (default: 1000)
+    maxDelayMs: 30000,        // Maximum delay between retries (default: 30000)
+    maxJitterMs: 1000,        // Maximum jitter to add (default: 1000)
+    retryableStatuses: [429, 503, 504],  // HTTP status codes to retry (default)
+  },
+  // Or disable retry entirely:
+  // retry: false,
 });
 ```
 
@@ -675,7 +698,7 @@ const options: GenerateDocumentOptions = {
     invoiceNumber: 'INV-001',
     items: [{ name: 'Widget', price: 29.99 }],
   },
-  workspaceId: 'ws_abc123',  // Optional
+  metadata: { orderId: 'ORD-12345' },  // Optional: custom metadata
 };
 
 const result: GenerateDocumentResponse = await rynko.documents.generate(options);
@@ -723,7 +746,7 @@ const result: GenerateDocumentResponse = await rynko.documents.generate(options)
 | Function | Returns | Description |
 |----------|---------|-------------|
 | `verifyWebhookSignature(options)` | `WebhookEvent` | Verify signature and parse webhook event |
-| `parseSignatureHeader(header)` | `{ timestamp: string; signatures: string[] }` | Parse signature header |
+| `parseSignatureHeader(header)` | `{ timestamp: number; signature: string }` | Parse signature header |
 | `computeSignature(timestamp, payload, secret)` | `string` | Compute expected signature |
 
 ## Examples

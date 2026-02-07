@@ -112,11 +112,11 @@ describe('Webhook Event Parsing', () => {
   }
 
   describe('Document Events', () => {
-    it('should parse document.completed event with metadata', () => {
+    it('should parse document.generated event with metadata', () => {
       const timestamp = Math.floor(Date.now() / 1000);
       const payload = JSON.stringify({
         id: 'evt_123',
-        type: 'document.completed',
+        type: 'document.generated',
         timestamp: '2025-02-02T12:00:00Z',
         data: {
           jobId: 'job_456',
@@ -141,7 +141,7 @@ describe('Webhook Event Parsing', () => {
       });
 
       expect(event.id).toBe('evt_123');
-      expect(event.type).toBe('document.completed');
+      expect(event.type).toBe('document.generated');
 
       const data = event.data as DocumentWebhookData;
       expect(data.jobId).toBe('job_456');
@@ -193,7 +193,7 @@ describe('Webhook Event Parsing', () => {
       const timestamp = Math.floor(Date.now() / 1000);
       const payload = JSON.stringify({
         id: 'evt_no_meta',
-        type: 'document.completed',
+        type: 'document.generated',
         timestamp: '2025-02-02T12:00:00Z',
         data: {
           jobId: 'job_789',

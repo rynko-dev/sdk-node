@@ -11,7 +11,7 @@
  *   curl -X POST http://localhost:3000/webhooks/rynko \
  *     -H "Content-Type: application/json" \
  *     -H "X-Rynko-Signature: t=...,v1=..." \
- *     -d '{"type":"document.completed","id":"evt_123",...}'
+ *     -d '{"type":"document.generated","id":"evt_123",...}'
  */
 
 import express from 'express';
@@ -43,7 +43,7 @@ app.post('/webhooks/rynko', (req, res) => {
     console.log(`Received: ${event.type} (${event.id})`);
 
     switch (event.type) {
-      case 'document.completed': {
+      case 'document.generated': {
         // Use typed interface for document events
         const data = event.data as DocumentWebhookData;
         console.log(`Document ready!`);
@@ -108,7 +108,7 @@ app.listen(port, () => {
   console.log(`Endpoint: POST /webhooks/rynko`);
   console.log();
   console.log('Supported event types:');
-  console.log('  - document.completed: Document was successfully generated');
+  console.log('  - document.generated: Document was successfully generated');
   console.log('  - document.failed: Document generation failed');
   console.log('  - batch.completed: Batch of documents completed');
 });

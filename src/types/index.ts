@@ -243,8 +243,9 @@ export interface WebhookSubscription {
 }
 
 export type WebhookEventType =
-  | 'document.completed'
+  | 'document.generated'
   | 'document.failed'
+  | 'document.downloaded'
   | 'batch.completed';
 
 /** Data payload for document webhook events */

@@ -1,6 +1,6 @@
 {
   "name": "@rynko/sdk",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Official Node.js SDK for Rynko - Generate PDFs and Excel files from templates",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

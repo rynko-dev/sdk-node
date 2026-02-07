@@ -58,7 +58,7 @@ async function main() {
   console.log();
   console.log('Metadata will be returned in webhook payloads:');
   console.log('  - Batch-level metadata in batch.completed event');
-  console.log('  - Per-document metadata in each document.completed/failed event');
+  console.log('  - Per-document metadata in each document.generated/failed event');
   console.log();
   console.log('Use metadata to correlate webhook events with your orders.');
 }
