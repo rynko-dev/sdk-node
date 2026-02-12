@@ -164,16 +164,16 @@ Maintain `CHANGELOG.md` with:
 
 ## [1.1.0] - 2025-01-15
 ### Added
-- New `emails.resend()` method
-- Support for custom headers
+- New `documents.waitForCompletion()` method
+- Support for workspace ID in document generation
 
 ### Fixed
-- Timeout handling in bulk send
+- Timeout handling in batch generation
 
 ## [1.0.0] - 2025-01-01
 ### Initial Release
-- Email sending with templates
-- PDF and Excel attachments
+- Document generation (PDF and Excel)
+- Template listing and retrieval
 - Webhook signature verification
 ```
 
@@ -207,16 +207,15 @@ The SDK requires these Rynko API endpoints:
 
 | Endpoint | SDK Method |
 |----------|------------|
-| `GET /api/v1/me` | `client.me()` |
-| `POST /api/v1/emails/send` | `client.emails.send()` |
-| `POST /api/v1/emails/send-bulk` | `client.emails.sendBulk()` |
-| `GET /api/v1/emails` | `client.emails.list()` |
-| `GET /api/v1/emails/:id` | `client.emails.get()` |
+| `GET /api/auth/verify` | `client.me()` / `client.verifyApiKey()` |
+| `POST /api/v1/documents/generate` | `client.documents.generate()` / `generatePdf()` / `generateExcel()` |
+| `POST /api/v1/documents/generate/batch` | `client.documents.generateBatch()` |
+| `GET /api/v1/documents/jobs/:id` | `client.documents.getJob()` |
+| `GET /api/v1/documents/jobs` | `client.documents.listJobs()` |
 | `GET /api/v1/templates` | `client.templates.list()` |
 | `GET /api/v1/templates/:id` | `client.templates.get()` |
-| `POST /api/v1/webhook-subscriptions` | `client.webhooks.create()` |
 | `GET /api/v1/webhook-subscriptions` | `client.webhooks.list()` |
-| `DELETE /api/v1/webhook-subscriptions/:id` | `client.webhooks.delete()` |
+| `GET /api/v1/webhook-subscriptions/:id` | `client.webhooks.get()` |
 
 ### API Version Compatibility
 
@@ -259,13 +258,16 @@ const client = new Rynko({
 const user = await client.me();
 console.log('Authenticated as:', user.email);
 
-// Test email sending
-const result = await client.emails.send({
+// Test document generation
+const job = await client.documents.generatePdf({
   templateId: 'tmpl_test',
-  to: 'test@example.com',
   variables: { name: 'Test' },
 });
-console.log('Email sent:', result.id);
+console.log('Job queued:', job.jobId);
+
+// Wait for completion
+const completed = await client.documents.waitForCompletion(job.jobId);
+console.log('Download URL:', completed.downloadUrl);
 ```
 
 ## Documentation
