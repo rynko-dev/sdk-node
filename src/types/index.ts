@@ -183,7 +183,7 @@ export interface ListDocumentJobsOptions {
   format?: 'pdf' | 'excel' | 'csv';
   /** Filter by template ID */
   templateId?: string;
-  /** Filter by workspace ID */
+  /** Filter by environment ID */
   workspaceId?: string;
   /** Filter by date range start */
   dateFrom?: string | Date;

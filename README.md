@@ -77,7 +77,7 @@ console.log('Download URL:', completed.downloadUrl);
 - **PDF generation** - Generate PDF documents from templates
 - **Excel generation** - Generate Excel spreadsheets from templates
 - **Batch generation** - Generate multiple documents in a single request
-- **Workspace support** - Generate documents in specific workspaces
+- **Environment support** - Generate documents in specific environments
 - **Webhook verification** - Secure HMAC signature verification for incoming webhooks
 - **Polling utility** - Built-in `waitForCompletion()` method with configurable timeout
 - **Automatic retries** - Configurable retry logic for transient failures
@@ -104,7 +104,7 @@ const rynko = new Rynko({
 // Verify authentication
 const user = await rynko.me();
 console.log('Authenticated as:', user.email);
-console.log('Team:', user.teamName);
+console.log('Project:', user.teamName);
 ```
 
 ### Verify API Key
@@ -322,7 +322,7 @@ const { data: invoiceJobs } = await rynko.documents.listJobs({
   templateId: 'tmpl_invoice',
 });
 
-// Filter by workspace
+// Filter by environment
 const { data: workspaceJobs } = await rynko.documents.listJobs({
   workspaceId: 'ws_abc123',
 });
