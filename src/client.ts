@@ -4,6 +4,7 @@
 
 import { HttpClient } from './utils/http';
 import { DocumentsResource } from './resources/documents';
+import { FlowResource } from './resources/flow';
 import { TemplatesResource } from './resources/templates';
 import { WebhooksResource } from './resources/webhooks';
 import type { RynkoConfig, ApiResponse, User } from './types';
@@ -16,6 +17,9 @@ export class Rynko {
 
   /** Document generation operations */
   public documents: DocumentsResource;
+
+  /** Flow AI output validation operations */
+  public flow: FlowResource;
 
   /** Template operations */
   public templates: TemplatesResource;
@@ -56,6 +60,7 @@ export class Rynko {
     });
 
     this.documents = new DocumentsResource(this.http);
+    this.flow = new FlowResource(this.http);
     this.templates = new TemplatesResource(this.http);
     this.webhooks = new WebhooksResource(this.http);
   }

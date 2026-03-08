@@ -45,6 +45,7 @@ export { Rynko, createClient } from './client';
 
 // Resources
 export { DocumentsResource } from './resources/documents';
+export { FlowResource } from './resources/flow';
 export { TemplatesResource } from './resources/templates';
 export { WebhooksResource } from './resources/webhooks';
 
@@ -90,5 +91,26 @@ export type {
   // User types
   User,
 } from './types';
+
+// Flow types
+export type {
+  FlowRunStatus,
+  FlowGate,
+  FlowRun,
+  FlowValidationError,
+  FlowApproval,
+  FlowDelivery,
+  ListGatesOptions,
+  SubmitRunOptions,
+  SubmitRunResponse,
+  ListRunsOptions,
+  WaitForRunOptions,
+  ListApprovalsOptions,
+  ApproveOptions,
+  RejectOptions,
+  ListDeliveriesOptions,
+} from './types/flow';
+
+export { FLOW_RUN_TERMINAL_STATUSES } from './types/flow';
 
 export type { VerifyWebhookOptions } from './utils/webhooks';

@@ -28,6 +28,9 @@ RYNKO_API_KEY=your_key npx tsx examples/basic-generate.ts
 | [batch-generate.ts](./batch-generate.ts) | Generate multiple documents in one request |
 | [webhook-handler.ts](./webhook-handler.ts) | Express server that verifies and handles webhooks |
 | [error-handling.ts](./error-handling.ts) | Handle API errors gracefully |
+| [flow-submit-and-wait.ts](./flow-submit-and-wait.ts) | Submit a Flow run and wait for the validation result |
+| [flow-approval-workflow.ts](./flow-approval-workflow.ts) | Programmatically approve or reject pending Flow approvals |
+| [flow-webhook-handler.ts](./flow-webhook-handler.ts) | Express server that handles Flow webhook events |
 
 ## More Examples
 

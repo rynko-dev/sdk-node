@@ -159,7 +159,7 @@ interface ListDocumentJobsOptions {
     format?: 'pdf' | 'excel' | 'csv';
     /** Filter by template ID */
     templateId?: string;
-    /** Filter by workspace ID */
+    /** Filter by environment ID */
     workspaceId?: string;
     /** Filter by date range start */
     dateFrom?: string | Date;
@@ -205,7 +205,7 @@ interface WebhookSubscription {
     createdAt: string;
     updatedAt: string;
 }
-type WebhookEventType = 'document.completed' | 'document.failed' | 'batch.completed';
+type WebhookEventType = 'document.generated' | 'document.failed' | 'document.downloaded' | 'batch.completed';
 /** Data payload for document webhook events */
 interface DocumentWebhookData {
     /** Job ID */
@@ -468,6 +468,310 @@ declare class DocumentsResource {
 }
 
 /**
+ * Rynko Flow Types
+ */
+type FlowRunStatus = 'pending' | 'validating' | 'approved' | 'rejected' | 'review_required' | 'completed' | 'delivered' | 'validation_failed' | 'render_failed' | 'delivery_failed';
+/** Terminal statuses for waitForRun polling */
+declare const FLOW_RUN_TERMINAL_STATUSES: FlowRunStatus[];
+interface FlowGate {
+    id: string;
+    name: string;
+    slug?: string;
+    description?: string;
+    status: 'draft' | 'published' | 'archived';
+    schemaVersion?: number;
+    createdAt: string;
+    updatedAt: string;
+}
+interface ListGatesOptions {
+    /** Number of results per page (default: 20) */
+    limit?: number;
+    /** Page number (default: 1) */
+    page?: number;
+    /** Filter by gate status */
+    status?: 'draft' | 'published' | 'archived';
+}
+interface FlowRun {
+    id: string;
+    gateId: string;
+    status: FlowRunStatus;
+    input: Record<string, unknown>;
+    output?: Record<string, unknown>;
+    errors?: FlowValidationError[];
+    metadata?: Record<string, unknown>;
+    createdAt: string;
+    updatedAt: string;
+    completedAt?: string;
+}
+interface FlowValidationError {
+    field?: string;
+    rule?: string;
+    message: string;
+}
+interface SubmitRunOptions {
+    /** Input data to validate against the gate schema */
+    input: Record<string, unknown>;
+    /** Optional metadata for tracking */
+    metadata?: Record<string, unknown>;
+    /** Webhook URL for run completion notification */
+    webhookUrl?: string;
+}
+interface SubmitRunResponse {
+    id: string;
+    status: FlowRunStatus;
+    gateId: string;
+    createdAt: string;
+}
+interface ListRunsOptions {
+    /** Number of results per page (default: 20) */
+    limit?: number;
+    /** Page number (default: 1) */
+    page?: number;
+    /** Filter by run status */
+    status?: FlowRunStatus;
+}
+interface WaitForRunOptions {
+    /** Poll interval in milliseconds (default: 1000) */
+    pollInterval?: number;
+    /** Timeout in milliseconds (default: 60000) */
+    timeout?: number;
+}
+interface FlowApproval {
+    id: string;
+    runId: string;
+    gateId: string;
+    status: 'pending' | 'approved' | 'rejected';
+    reviewerEmail?: string;
+    reviewerNote?: string;
+    createdAt: string;
+    updatedAt: string;
+    resolvedAt?: string;
+}
+interface ListApprovalsOptions {
+    /** Number of results per page (default: 20) */
+    limit?: number;
+    /** Page number (default: 1) */
+    page?: number;
+    /** Filter by approval status */
+    status?: 'pending' | 'approved' | 'rejected';
+}
+interface ApproveOptions {
+    /** Optional note from the reviewer */
+    note?: string;
+}
+interface RejectOptions {
+    /** Optional reason for rejection */
+    reason?: string;
+}
+interface FlowDelivery {
+    id: string;
+    runId: string;
+    status: 'pending' | 'delivered' | 'failed';
+    url?: string;
+    httpStatus?: number;
+    attempts: number;
+    lastAttemptAt?: string;
+    error?: string;
+    createdAt: string;
+}
+interface ListDeliveriesOptions {
+    /** Number of results per page (default: 20) */
+    limit?: number;
+    /** Page number (default: 1) */
+    page?: number;
+}
+
+/**
+ * Flow Resource
+ */
+
+declare class FlowResource {
+    private http;
+    constructor(http: HttpClient);
+    /**
+     * List all gates
+     *
+     * @example
+     * ```typescript
+     * const { data, meta } = await rynko.flow.listGates();
+     * for (const gate of data) {
+     *   console.log(gate.name, gate.status);
+     * }
+     * ```
+     */
+    listGates(options?: ListGatesOptions): Promise<{
+        data: FlowGate[];
+        meta: PaginationMeta;
+    }>;
+    /**
+     * Get a gate by ID
+     *
+     * @example
+     * ```typescript
+     * const gate = await rynko.flow.getGate('gate_abc123');
+     * console.log(gate.name, gate.status);
+     * ```
+     */
+    getGate(gateId: string): Promise<FlowGate>;
+    /**
+     * Submit a run to a gate for validation
+     *
+     * @example
+     * ```typescript
+     * const run = await rynko.flow.submitRun('gate_abc123', {
+     *   input: {
+     *     name: 'John Doe',
+     *     email: 'john@example.com',
+     *     amount: 150.00,
+     *   },
+     *   metadata: { source: 'checkout' },
+     * });
+     * console.log('Run ID:', run.id);
+     *
+     * // Wait for validation result
+     * const result = await rynko.flow.waitForRun(run.id);
+     * console.log('Status:', result.status);
+     * ```
+     */
+    submitRun(gateId: string, options: SubmitRunOptions): Promise<SubmitRunResponse>;
+    /**
+     * Get a run by ID
+     *
+     * @example
+     * ```typescript
+     * const run = await rynko.flow.getRun('run_abc123');
+     * console.log('Status:', run.status);
+     * if (run.errors) {
+     *   console.log('Validation errors:', run.errors);
+     * }
+     * ```
+     */
+    getRun(runId: string): Promise<FlowRun>;
+    /**
+     * List all runs
+     *
+     * @example
+     * ```typescript
+     * const { data, meta } = await rynko.flow.listRuns({ status: 'approved' });
+     * console.log(`Found ${meta.total} approved runs`);
+     * ```
+     */
+    listRuns(options?: ListRunsOptions): Promise<{
+        data: FlowRun[];
+        meta: PaginationMeta;
+    }>;
+    /**
+     * List runs for a specific gate
+     *
+     * @example
+     * ```typescript
+     * const { data } = await rynko.flow.listRunsByGate('gate_abc123');
+     * ```
+     */
+    listRunsByGate(gateId: string, options?: ListRunsOptions): Promise<{
+        data: FlowRun[];
+        meta: PaginationMeta;
+    }>;
+    /**
+     * List active (non-terminal) runs
+     *
+     * @example
+     * ```typescript
+     * const { data } = await rynko.flow.listActiveRuns();
+     * console.log(`${data.length} runs in progress`);
+     * ```
+     */
+    listActiveRuns(options?: Omit<ListRunsOptions, 'status'>): Promise<{
+        data: FlowRun[];
+        meta: PaginationMeta;
+    }>;
+    /**
+     * Wait for a run to reach a terminal state
+     *
+     * @example
+     * ```typescript
+     * const run = await rynko.flow.submitRun('gate_abc123', {
+     *   input: { name: 'John' },
+     * });
+     *
+     * const result = await rynko.flow.waitForRun(run.id, {
+     *   pollInterval: 2000,
+     *   timeout: 120000,
+     * });
+     *
+     * if (result.status === 'approved') {
+     *   console.log('Run approved!', result.output);
+     * } else if (result.status === 'rejected') {
+     *   console.log('Run rejected:', result.errors);
+     * }
+     * ```
+     */
+    waitForRun(runId: string, options?: WaitForRunOptions): Promise<FlowRun>;
+    /**
+     * List approvals
+     *
+     * @example
+     * ```typescript
+     * const { data } = await rynko.flow.listApprovals({ status: 'pending' });
+     * for (const approval of data) {
+     *   console.log(`Approval ${approval.id} for run ${approval.runId}`);
+     * }
+     * ```
+     */
+    listApprovals(options?: ListApprovalsOptions): Promise<{
+        data: FlowApproval[];
+        meta: PaginationMeta;
+    }>;
+    /**
+     * Approve a pending approval
+     *
+     * @example
+     * ```typescript
+     * const approval = await rynko.flow.approve('approval_abc123', {
+     *   note: 'Looks good, approved.',
+     * });
+     * ```
+     */
+    approve(approvalId: string, options?: ApproveOptions): Promise<FlowApproval>;
+    /**
+     * Reject a pending approval
+     *
+     * @example
+     * ```typescript
+     * const approval = await rynko.flow.reject('approval_abc123', {
+     *   reason: 'Invalid data in the amount field.',
+     * });
+     * ```
+     */
+    reject(approvalId: string, options?: RejectOptions): Promise<FlowApproval>;
+    /**
+     * List deliveries for a run
+     *
+     * @example
+     * ```typescript
+     * const { data } = await rynko.flow.listDeliveries('run_abc123');
+     * for (const delivery of data) {
+     *   console.log(`${delivery.status} - ${delivery.url}`);
+     * }
+     * ```
+     */
+    listDeliveries(runId: string, options?: ListDeliveriesOptions): Promise<{
+        data: FlowDelivery[];
+        meta: PaginationMeta;
+    }>;
+    /**
+     * Retry a failed delivery
+     *
+     * @example
+     * ```typescript
+     * const delivery = await rynko.flow.retryDelivery('delivery_abc123');
+     * console.log('Retry status:', delivery.status);
+     * ```
+     */
+    retryDelivery(deliveryId: string): Promise<FlowDelivery>;
+}
+
+/**
  * Templates Resource
  */
 
@@ -574,6 +878,8 @@ declare class Rynko {
     private http;
     /** Document generation operations */
     documents: DocumentsResource;
+    /** Flow AI output validation operations */
+    flow: FlowResource;
     /** Template operations */
     templates: TemplatesResource;
     /** Webhook operations */
@@ -693,4 +999,4 @@ declare class WebhookSignatureError extends Error {
     constructor(message: string);
 }
 
-export { type ApiError, type ApiResponse, type BatchDocumentSpec, type BatchWebhookData, type DocumentJob, type DocumentJobStatus, type DocumentMetadata, type DocumentWebhookData, DocumentsResource, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListDocumentJobsOptions, type ListTemplatesOptions, type MetadataValue, type PaginationMeta, type RetryConfig, Rynko, type RynkoConfig, RynkoError, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };
+export { type ApiError, type ApiResponse, type ApproveOptions, type BatchDocumentSpec, type BatchWebhookData, type DocumentJob, type DocumentJobStatus, type DocumentMetadata, type DocumentWebhookData, DocumentsResource, FLOW_RUN_TERMINAL_STATUSES, type FlowApproval, type FlowDelivery, type FlowGate, FlowResource, type FlowRun, type FlowRunStatus, type FlowValidationError, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListApprovalsOptions, type ListDeliveriesOptions, type ListDocumentJobsOptions, type ListGatesOptions, type ListRunsOptions, type ListTemplatesOptions, type MetadataValue, type PaginationMeta, type RejectOptions, type RetryConfig, Rynko, type RynkoConfig, RynkoError, type SubmitRunOptions, type SubmitRunResponse, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WaitForRunOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };

@@ -202,7 +202,7 @@ var DocumentsResource = class {
   async generate(options) {
     return this.http.post(
       "/api/v1/documents/generate",
-      options
+      { ...options, source: "sdk_node" }
     );
   }
   /**
@@ -269,7 +269,7 @@ var DocumentsResource = class {
   async generateBatch(options) {
     return this.http.post(
       "/api/v1/documents/generate/batch",
-      options
+      { ...options, source: "sdk_node" }
     );
   }
   /**
@@ -352,6 +352,365 @@ var DocumentsResource = class {
       }
       await new Promise((resolve) => setTimeout(resolve, pollInterval));
     }
+  }
+};
+
+// src/resources/flow.ts
+var TERMINAL_STATUSES = [
+  "completed",
+  "delivered",
+  "approved",
+  "rejected",
+  "validation_failed",
+  "render_failed",
+  "delivery_failed"
+];
+var FlowResource = class {
+  constructor(http) {
+    this.http = http;
+  }
+  // ============================================
+  // Gates (read-only)
+  // ============================================
+  /**
+   * List all gates
+   *
+   * @example
+   * ```typescript
+   * const { data, meta } = await rynko.flow.listGates();
+   * for (const gate of data) {
+   *   console.log(gate.name, gate.status);
+   * }
+   * ```
+   */
+  async listGates(options = {}) {
+    const limit = options.limit ?? 20;
+    const page = options.page ?? 1;
+    const offset = (page - 1) * limit;
+    const response = await this.http.get(
+      "/api/flow/gates",
+      {
+        limit,
+        offset,
+        status: options.status
+      }
+    );
+    const gates = response.data ?? response.gates ?? [];
+    const total = response.total ?? response.meta?.total ?? gates.length;
+    return {
+      data: gates,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+  /**
+   * Get a gate by ID
+   *
+   * @example
+   * ```typescript
+   * const gate = await rynko.flow.getGate('gate_abc123');
+   * console.log(gate.name, gate.status);
+   * ```
+   */
+  async getGate(gateId) {
+    return this.http.get(`/api/flow/gates/${gateId}`);
+  }
+  // ============================================
+  // Runs
+  // ============================================
+  /**
+   * Submit a run to a gate for validation
+   *
+   * @example
+   * ```typescript
+   * const run = await rynko.flow.submitRun('gate_abc123', {
+   *   input: {
+   *     name: 'John Doe',
+   *     email: 'john@example.com',
+   *     amount: 150.00,
+   *   },
+   *   metadata: { source: 'checkout' },
+   * });
+   * console.log('Run ID:', run.id);
+   *
+   * // Wait for validation result
+   * const result = await rynko.flow.waitForRun(run.id);
+   * console.log('Status:', result.status);
+   * ```
+   */
+  async submitRun(gateId, options) {
+    return this.http.post(
+      `/api/flow/gates/${gateId}/runs`,
+      options
+    );
+  }
+  /**
+   * Get a run by ID
+   *
+   * @example
+   * ```typescript
+   * const run = await rynko.flow.getRun('run_abc123');
+   * console.log('Status:', run.status);
+   * if (run.errors) {
+   *   console.log('Validation errors:', run.errors);
+   * }
+   * ```
+   */
+  async getRun(runId) {
+    return this.http.get(`/api/flow/runs/${runId}`);
+  }
+  /**
+   * List all runs
+   *
+   * @example
+   * ```typescript
+   * const { data, meta } = await rynko.flow.listRuns({ status: 'approved' });
+   * console.log(`Found ${meta.total} approved runs`);
+   * ```
+   */
+  async listRuns(options = {}) {
+    const limit = options.limit ?? 20;
+    const page = options.page ?? 1;
+    const offset = (page - 1) * limit;
+    const response = await this.http.get(
+      "/api/flow/runs",
+      {
+        limit,
+        offset,
+        status: options.status
+      }
+    );
+    const runs = response.data ?? response.runs ?? [];
+    const total = response.total ?? response.meta?.total ?? runs.length;
+    return {
+      data: runs,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+  /**
+   * List runs for a specific gate
+   *
+   * @example
+   * ```typescript
+   * const { data } = await rynko.flow.listRunsByGate('gate_abc123');
+   * ```
+   */
+  async listRunsByGate(gateId, options = {}) {
+    const limit = options.limit ?? 20;
+    const page = options.page ?? 1;
+    const offset = (page - 1) * limit;
+    const response = await this.http.get(
+      `/api/flow/gates/${gateId}/runs`,
+      {
+        limit,
+        offset,
+        status: options.status
+      }
+    );
+    const runs = response.data ?? response.runs ?? [];
+    const total = response.total ?? response.meta?.total ?? runs.length;
+    return {
+      data: runs,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+  /**
+   * List active (non-terminal) runs
+   *
+   * @example
+   * ```typescript
+   * const { data } = await rynko.flow.listActiveRuns();
+   * console.log(`${data.length} runs in progress`);
+   * ```
+   */
+  async listActiveRuns(options = {}) {
+    const limit = options.limit ?? 20;
+    const page = options.page ?? 1;
+    const offset = (page - 1) * limit;
+    const response = await this.http.get(
+      "/api/flow/runs/active",
+      { limit, offset }
+    );
+    const runs = response.data ?? response.runs ?? [];
+    const total = response.total ?? response.meta?.total ?? runs.length;
+    return {
+      data: runs,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+  /**
+   * Wait for a run to reach a terminal state
+   *
+   * @example
+   * ```typescript
+   * const run = await rynko.flow.submitRun('gate_abc123', {
+   *   input: { name: 'John' },
+   * });
+   *
+   * const result = await rynko.flow.waitForRun(run.id, {
+   *   pollInterval: 2000,
+   *   timeout: 120000,
+   * });
+   *
+   * if (result.status === 'approved') {
+   *   console.log('Run approved!', result.output);
+   * } else if (result.status === 'rejected') {
+   *   console.log('Run rejected:', result.errors);
+   * }
+   * ```
+   */
+  async waitForRun(runId, options = {}) {
+    const pollInterval = options.pollInterval ?? 1e3;
+    const timeout = options.timeout ?? 6e4;
+    const startTime = Date.now();
+    while (true) {
+      const run = await this.getRun(runId);
+      if (TERMINAL_STATUSES.includes(run.status)) {
+        return run;
+      }
+      if (Date.now() - startTime > timeout) {
+        throw new Error(`Timeout waiting for run ${runId} to complete`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    }
+  }
+  // ============================================
+  // Approvals
+  // ============================================
+  /**
+   * List approvals
+   *
+   * @example
+   * ```typescript
+   * const { data } = await rynko.flow.listApprovals({ status: 'pending' });
+   * for (const approval of data) {
+   *   console.log(`Approval ${approval.id} for run ${approval.runId}`);
+   * }
+   * ```
+   */
+  async listApprovals(options = {}) {
+    const limit = options.limit ?? 20;
+    const page = options.page ?? 1;
+    const offset = (page - 1) * limit;
+    const response = await this.http.get(
+      "/api/flow/approvals",
+      {
+        limit,
+        offset,
+        status: options.status
+      }
+    );
+    const approvals = response.data ?? response.approvals ?? [];
+    const total = response.total ?? response.meta?.total ?? approvals.length;
+    return {
+      data: approvals,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+  /**
+   * Approve a pending approval
+   *
+   * @example
+   * ```typescript
+   * const approval = await rynko.flow.approve('approval_abc123', {
+   *   note: 'Looks good, approved.',
+   * });
+   * ```
+   */
+  async approve(approvalId, options = {}) {
+    return this.http.post(
+      `/api/flow/approvals/${approvalId}/approve`,
+      options
+    );
+  }
+  /**
+   * Reject a pending approval
+   *
+   * @example
+   * ```typescript
+   * const approval = await rynko.flow.reject('approval_abc123', {
+   *   reason: 'Invalid data in the amount field.',
+   * });
+   * ```
+   */
+  async reject(approvalId, options = {}) {
+    return this.http.post(
+      `/api/flow/approvals/${approvalId}/reject`,
+      options
+    );
+  }
+  // ============================================
+  // Deliveries
+  // ============================================
+  /**
+   * List deliveries for a run
+   *
+   * @example
+   * ```typescript
+   * const { data } = await rynko.flow.listDeliveries('run_abc123');
+   * for (const delivery of data) {
+   *   console.log(`${delivery.status} - ${delivery.url}`);
+   * }
+   * ```
+   */
+  async listDeliveries(runId, options = {}) {
+    const limit = options.limit ?? 20;
+    const page = options.page ?? 1;
+    const offset = (page - 1) * limit;
+    const response = await this.http.get(
+      `/api/flow/runs/${runId}/deliveries`,
+      { limit, offset }
+    );
+    const deliveries = response.data ?? response.deliveries ?? [];
+    const total = response.total ?? response.meta?.total ?? deliveries.length;
+    return {
+      data: deliveries,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+  /**
+   * Retry a failed delivery
+   *
+   * @example
+   * ```typescript
+   * const delivery = await rynko.flow.retryDelivery('delivery_abc123');
+   * console.log('Retry status:', delivery.status);
+   * ```
+   */
+  async retryDelivery(deliveryId) {
+    return this.http.post(
+      `/api/flow/deliveries/${deliveryId}/retry`,
+      {}
+    );
   }
 };
 
@@ -519,6 +878,7 @@ var Rynko = class {
       retry: config.retry
     });
     this.documents = new DocumentsResource(this.http);
+    this.flow = new FlowResource(this.http);
     this.templates = new TemplatesResource(this.http);
     this.webhooks = new WebhooksResource(this.http);
   }
@@ -610,8 +970,21 @@ var WebhookSignatureError = class extends Error {
     this.name = "WebhookSignatureError";
   }
 };
+
+// src/types/flow.ts
+var FLOW_RUN_TERMINAL_STATUSES = [
+  "completed",
+  "delivered",
+  "approved",
+  "rejected",
+  "validation_failed",
+  "render_failed",
+  "delivery_failed"
+];
 export {
   DocumentsResource,
+  FLOW_RUN_TERMINAL_STATUSES,
+  FlowResource,
   Rynko,
   RynkoError,
   TemplatesResource,
