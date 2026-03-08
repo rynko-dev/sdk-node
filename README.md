@@ -1,6 +1,6 @@
 # @rynko/sdk
 
-Official Node.js SDK for [Rynko](https://rynko.dev) - the document generation platform with unified template design for PDF and Excel documents.
+Official Node.js SDK for [Rynko](https://rynko.dev) - the document generation and AI output validation platform with unified template design for PDF and Excel documents.
 
 [![npm version](https://img.shields.io/npm/v/@rynko/sdk.svg)](https://www.npmjs.com/package/@rynko/sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -26,6 +26,11 @@ Official Node.js SDK for [Rynko](https://rynko.dev) - the document generation pl
 - [Webhooks](#webhooks)
   - [List Webhooks](#list-webhooks)
   - [Verify Webhook Signatures](#verify-webhook-signatures)
+- [Rynko Flow](#rynko-flow)
+  - [Submit and Wait for Run](#submit-and-wait-for-run)
+  - [List Gates](#list-gates)
+  - [Manage Approvals](#manage-approvals)
+  - [Monitor Deliveries](#monitor-deliveries)
 - [Configuration](#configuration)
 - [Error Handling](#error-handling)
 - [TypeScript Support](#typescript-support)
@@ -81,6 +86,7 @@ console.log('Download URL:', completed.downloadUrl);
 - **Webhook verification** - Secure HMAC signature verification for incoming webhooks
 - **Polling utility** - Built-in `waitForCompletion()` method with configurable timeout
 - **Automatic retries** - Configurable retry logic for transient failures
+- **Rynko Flow** - Submit runs for validation, manage approvals, and monitor deliveries
 
 ## Authentication
 
@@ -538,6 +544,115 @@ const expectedSignature = computeSignature(timestamp, payload, secret);
 const isValid = signature === expectedSignature;
 ```
 
+## Rynko Flow
+
+[Rynko Flow](https://rynko.dev/flow) is an AI output validation gateway. Define gates with schemas and business rules, submit data for validation, handle human-in-the-loop approvals, and track webhook deliveries.
+
+### Submit and Wait for Run
+
+```typescript
+// Submit data to a gate for validation
+const run = await rynko.flow.submitRun('gate_abc123', {
+  input: {
+    customerName: 'John Doe',
+    email: 'john@example.com',
+    amount: 150.00,
+  },
+  metadata: { source: 'checkout' },
+  webhookUrl: 'https://your-app.com/webhooks/flow',
+});
+
+console.log('Run ID:', run.id);
+console.log('Status:', run.status);  // 'pending'
+
+// Wait for validation result (polls until terminal state)
+const result = await rynko.flow.waitForRun(run.id, {
+  pollInterval: 2000,   // Check every 2 seconds (default: 1000)
+  timeout: 120000,      // Wait up to 2 minutes (default: 60000)
+});
+
+if (result.status === 'approved') {
+  console.log('Validation passed!', result.output);
+} else if (result.status === 'rejected') {
+  console.log('Validation failed:', result.errors);
+} else if (result.status === 'validation_failed') {
+  console.log('Schema validation errors:', result.errors);
+}
+```
+
+### List Gates
+
+```typescript
+// List all gates
+const { data: gates, meta } = await rynko.flow.listGates();
+
+for (const gate of gates) {
+  console.log(`${gate.id}: ${gate.name} (${gate.status})`);
+}
+
+// Get a specific gate
+const gate = await rynko.flow.getGate('gate_abc123');
+console.log('Gate:', gate.name);
+console.log('Schema:', gate.schema);
+```
+
+### List and Filter Runs
+
+```typescript
+// List all runs
+const { data: runs } = await rynko.flow.listRuns();
+
+// Filter by status
+const { data: approved } = await rynko.flow.listRuns({ status: 'approved' });
+
+// List runs for a specific gate
+const { data: gateRuns } = await rynko.flow.listRunsByGate('gate_abc123');
+
+// List active (in-progress) runs
+const { data: active } = await rynko.flow.listActiveRuns();
+console.log(`${active.length} runs in progress`);
+
+// Get a specific run
+const run = await rynko.flow.getRun('run_abc123');
+console.log('Status:', run.status);
+```
+
+### Manage Approvals
+
+When a gate has approval rules, runs may enter a `review_required` state:
+
+```typescript
+// List pending approvals
+const { data: approvals } = await rynko.flow.listApprovals({ status: 'pending' });
+
+for (const approval of approvals) {
+  console.log(`Approval ${approval.id} for run ${approval.runId}`);
+
+  // Approve with a note
+  await rynko.flow.approve(approval.id, { note: 'Looks good, approved.' });
+
+  // Or reject with a reason
+  // await rynko.flow.reject(approval.id, { reason: 'Amount exceeds limit.' });
+}
+```
+
+### Monitor Deliveries
+
+Track webhook deliveries for completed runs:
+
+```typescript
+// List deliveries for a run
+const { data: deliveries } = await rynko.flow.listDeliveries('run_abc123');
+
+for (const delivery of deliveries) {
+  console.log(`${delivery.id}: ${delivery.status} → ${delivery.url}`);
+}
+
+// Retry a failed delivery
+const retried = await rynko.flow.retryDelivery('delivery_abc123');
+console.log('Retry status:', retried.status);
+```
+
 ## Configuration
 
 ```typescript
@@ -681,6 +796,18 @@ import type {
   WebhookEventType,
   WebhookEvent,
 
+  // Flow types
+  FlowGate,
+  FlowRun,
+  FlowRunStatus,
+  FlowApproval,
+  FlowDelivery,
+  SubmitRunOptions,
+  ListGatesOptions,
+  ListRunsOptions,
+  ListApprovalsOptions,
+  WaitForRunOptions,
+
   // Response types
   ApiResponse,
   PaginationMeta,
@@ -741,6 +868,24 @@ const result: GenerateDocumentResponse = await rynko.documents.generate(options)
 | `get(webhookId)` | `Promise<WebhookSubscription>` | Get webhook subscription by ID |
 | `list()` | `Promise<{ data: WebhookSubscription[]; meta: PaginationMeta }>` | List all webhook subscriptions |
 
+### Flow Resource
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `listGates(options?)` | `Promise<{ data: FlowGate[]; meta }>` | List all gates |
+| `getGate(gateId)` | `Promise<FlowGate>` | Get gate by ID |
+| `submitRun(gateId, options)` | `Promise<SubmitRunResponse>` | Submit a run for validation |
+| `getRun(runId)` | `Promise<FlowRun>` | Get run by ID |
+| `listRuns(options?)` | `Promise<{ data: FlowRun[]; meta }>` | List all runs |
+| `listRunsByGate(gateId, options?)` | `Promise<{ data: FlowRun[]; meta }>` | List runs for a gate |
+| `listActiveRuns(options?)` | `Promise<{ data: FlowRun[]; meta }>` | List active runs |
+| `waitForRun(runId, options?)` | `Promise<FlowRun>` | Poll until run reaches terminal state |
+| `listApprovals(options?)` | `Promise<{ data: FlowApproval[]; meta }>` | List approvals |
+| `approve(approvalId, options?)` | `Promise<FlowApproval>` | Approve a pending approval |
+| `reject(approvalId, options?)` | `Promise<FlowApproval>` | Reject a pending approval |
+| `listDeliveries(runId, options?)` | `Promise<{ data: FlowDelivery[]; meta }>` | List deliveries for a run |
+| `retryDelivery(deliveryId)` | `Promise<FlowDelivery>` | Retry a failed delivery |
+
 ### Utilities
 
 | Function | Returns | Description |
@@ -757,6 +902,9 @@ See the [`examples/`](./examples) directory for runnable code samples:
 - [batch-generate.ts](./examples/batch-generate.ts) - Generate multiple documents
 - [webhook-handler.ts](./examples/webhook-handler.ts) - Express webhook endpoint
 - [error-handling.ts](./examples/error-handling.ts) - Handle API errors
+- [flow-submit-and-wait.ts](./examples/flow-submit-and-wait.ts) - Submit a run and wait for validation
+- [flow-approval-workflow.ts](./examples/flow-approval-workflow.ts) - Programmatic approval automation
+- [flow-webhook-handler.ts](./examples/flow-webhook-handler.ts) - Express webhook handler for Flow events
 
 For complete project templates with full setup, see the [developer-resources](https://github.com/rynko-dev/developer-resources) repository.
 
