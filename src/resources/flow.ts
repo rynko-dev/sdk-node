@@ -23,6 +23,7 @@ import type {
 } from '../types/flow';
 
 const TERMINAL_STATUSES: FlowRunStatus[] = [
+  'validated',
   'completed',
   'delivered',
   'approved',
@@ -121,10 +122,15 @@ export class FlowResource {
     options: SubmitRunOptions
   ): Promise<SubmitRunResponse> {
     const { input, ...rest } = options;
-    return this.http.post<SubmitRunResponse>(
+    const response = await this.http.post<any>(
       `/api/flow/gates/${gateId}/runs`,
       { payload: input, ...rest }
     );
+    // Map runId → id for consistency with getRun/listRuns
+    return {
+      ...response,
+      id: response.runId ?? response.id,
+    };
   }
 
   /**

@@ -7,19 +7,23 @@
 // ============================================
 
 export type FlowRunStatus =
-  | 'pending'
   | 'validating'
+  | 'validated'
+  | 'rendering'
+  | 'rendered'
+  | 'pending_approval'
   | 'approved'
-  | 'rejected'
-  | 'review_required'
-  | 'completed'
+  | 'delivering'
   | 'delivered'
+  | 'completed'
   | 'validation_failed'
   | 'render_failed'
+  | 'rejected'
   | 'delivery_failed';
 
 /** Terminal statuses for waitForRun polling */
 export const FLOW_RUN_TERMINAL_STATUSES: FlowRunStatus[] = [
+  'validated',
   'completed',
   'delivered',
   'approved',
@@ -86,10 +90,31 @@ export interface SubmitRunOptions {
 }
 
 export interface SubmitRunResponse {
+  /** Run ID (mapped from `runId` in API response) */
   id: string;
+  /** Short ID for the run */
+  shortId?: string;
+  /** Run status */
   status: FlowRunStatus;
-  gateId: string;
-  createdAt: string;
+  /** Whether validation passed */
+  success: boolean;
+  /** Validation layer results */
+  layers?: {
+    schema?: 'pass' | 'fail' | 'skip';
+    business_rules?: 'pass' | 'fail' | 'skip';
+  };
+  /** Error details (present when validation fails) */
+  error?: {
+    code?: string;
+    message?: string;
+    layer?: string;
+    details?: Array<{
+      message: string;
+      code?: string;
+      rule_id?: string;
+      context?: Record<string, unknown>;
+    }>;
+  };
 }
 
 export interface ListRunsOptions {

@@ -394,6 +394,7 @@ var DocumentsResource = class {
 
 // src/resources/flow.ts
 var TERMINAL_STATUSES = [
+  "validated",
   "completed",
   "delivered",
   "approved",
@@ -423,12 +424,11 @@ var FlowResource = class {
   async listGates(options = {}) {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
     const response = await this.http.get(
       "/api/flow/gates",
       {
         limit,
-        offset,
+        page,
         status: options.status
       }
     );
@@ -481,10 +481,14 @@ var FlowResource = class {
    */
   async submitRun(gateId, options) {
     const { input, ...rest } = options;
-    return this.http.post(
+    const response = await this.http.post(
       `/api/flow/gates/${gateId}/runs`,
       { payload: input, ...rest }
     );
+    return {
+      ...response,
+      id: response.runId ?? response.id
+    };
   }
   /**
    * Get a run by ID
@@ -513,12 +517,11 @@ var FlowResource = class {
   async listRuns(options = {}) {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
     const response = await this.http.get(
       "/api/flow/runs",
       {
         limit,
-        offset,
+        page,
         status: options.status
       }
     );
@@ -545,12 +548,11 @@ var FlowResource = class {
   async listRunsByGate(gateId, options = {}) {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
     const response = await this.http.get(
       `/api/flow/gates/${gateId}/runs`,
       {
         limit,
-        offset,
+        page,
         status: options.status
       }
     );
@@ -578,10 +580,9 @@ var FlowResource = class {
   async listActiveRuns(options = {}) {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
     const response = await this.http.get(
       "/api/flow/runs/active",
-      { limit, offset }
+      { limit, page }
     );
     const runs = response.data ?? response.runs ?? [];
     const total = response.total ?? response.meta?.total ?? runs.length;
@@ -648,12 +649,11 @@ var FlowResource = class {
   async listApprovals(options = {}) {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
     const response = await this.http.get(
       "/api/flow/approvals",
       {
         limit,
-        offset,
+        page,
         status: options.status
       }
     );
@@ -736,10 +736,9 @@ var FlowResource = class {
   async listDeliveries(runId, options = {}) {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
     const response = await this.http.get(
       `/api/flow/runs/${runId}/deliveries`,
-      { limit, offset }
+      { limit, page }
     );
     const deliveries = response.data ?? response.deliveries ?? [];
     const total = response.total ?? response.meta?.total ?? deliveries.length;
@@ -1029,6 +1028,7 @@ var WebhookSignatureError = class extends Error {
 
 // src/types/flow.ts
 var FLOW_RUN_TERMINAL_STATUSES = [
+  "validated",
   "completed",
   "delivered",
   "approved",
