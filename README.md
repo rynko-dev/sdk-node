@@ -515,6 +515,11 @@ app.post('/webhooks/rynko', express.raw({ type: 'application/json' }), (req, res
 | `document.failed` | Document generation failed | `jobId`, `templateId`, `errorMessage`, `errorCode`, `metadata` |
 | `document.downloaded` | Document was downloaded | `jobId`, `downloadedAt` |
 | `batch.completed` | Batch generation finished | `batchId`, `templateId`, `format`, `totalJobs`, `completedJobs`, `failedJobs`, `metadata` |
+| `flow.run.completed` | Flow run completed successfully | `runId`, `gateId`, `status`, `output` |
+| `flow.run.approved` | Flow run approved by reviewer | `runId`, `gateId`, `status`, `approvalId` |
+| `flow.run.rejected` | Flow run rejected by reviewer | `runId`, `gateId`, `status`, `reason` |
+| `flow.run.review_required` | Flow run requires human review | `runId`, `gateId`, `status` |
+| `flow.delivery.failed` | Flow delivery failed | `deliveryId`, `runId`, `error`, `attempts` |
 
 #### Webhook Headers
 
@@ -563,20 +568,26 @@ const run = await rynko.flow.submitRun('gate_abc123', {
 });
 
 console.log('Run ID:', run.id);
-console.log('Status:', run.status);  // 'pending'
+console.log('Status:', run.status);    // 'validated' or 'validation_failed'
+console.log('Success:', run.success);  // true or false
 
-// Wait for validation result (polls until terminal state)
+// Check immediate validation result
+if (!run.success) {
+  console.log('Validation failed:', run.error);
+}
+
+// For gates with rendering/approval steps, wait for terminal state
 const result = await rynko.flow.waitForRun(run.id, {
   pollInterval: 2000,   // Check every 2 seconds (default: 1000)
   timeout: 120000,      // Wait up to 2 minutes (default: 60000)
 });
 
-if (result.status === 'approved') {
+if (result.status === 'validated' || result.status === 'approved') {
   console.log('Validation passed!', result.output);
-} else if (result.status === 'rejected') {
-  console.log('Validation failed:', result.errors);
 } else if (result.status === 'validation_failed') {
-  console.log('Schema validation errors:', result.errors);
+  console.log('Validation failed:', result.errors);
+} else if (result.status === 'rejected') {
+  console.log('Rejected by reviewer:', result.errors);
 }
 ```
 
@@ -619,7 +630,7 @@ console.log('Status:', run.status);
 
 ### Manage Approvals
 
-When a gate has approval rules, runs may enter a `review_required` state:
+When a gate has approval rules, runs may enter a `pending_approval` state:
 
 ```typescript
 // List pending approvals
