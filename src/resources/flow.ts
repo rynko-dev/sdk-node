@@ -121,9 +121,10 @@ export class FlowResource {
     gateId: string,
     options: SubmitRunOptions
   ): Promise<SubmitRunResponse> {
+    const { input, ...rest } = options;
     return this.http.post<SubmitRunResponse>(
       `/api/flow/gates/${gateId}/runs`,
-      options
+      { payload: input, ...rest }
     );
   }
 
