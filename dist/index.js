@@ -700,6 +700,24 @@ var FlowResource = class {
       options
     );
   }
+  /**
+   * Resend approval notification emails for a run
+   *
+   * Re-sends approval request emails to all pending approvers for a run
+   * that is in `review_required` status.
+   *
+   * @example
+   * ```typescript
+   * const result = await rynko.flow.resendApprovalEmail('run_abc123');
+   * console.log(`Sent ${result.sentCount} of ${result.totalApprovers} emails`);
+   * ```
+   */
+  async resendApprovalEmail(runId) {
+    return this.http.post(
+      `/api/flow/approvals/resend/${runId}`,
+      {}
+    );
+  }
   // ============================================
   // Deliveries
   // ============================================
