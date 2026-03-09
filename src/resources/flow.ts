@@ -55,13 +55,12 @@ export class FlowResource {
   ): Promise<{ data: FlowGate[]; meta: PaginationMeta }> {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
 
     const response = await this.http.get<{ data: FlowGate[]; total: number }>(
       '/api/flow/gates',
       {
         limit,
-        offset,
+        page,
         status: options.status,
       }
     );
@@ -158,13 +157,12 @@ export class FlowResource {
   ): Promise<{ data: FlowRun[]; meta: PaginationMeta }> {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
 
     const response = await this.http.get<{ data: FlowRun[]; total: number }>(
       '/api/flow/runs',
       {
         limit,
-        offset,
+        page,
         status: options.status,
       }
     );
@@ -197,13 +195,12 @@ export class FlowResource {
   ): Promise<{ data: FlowRun[]; meta: PaginationMeta }> {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
 
     const response = await this.http.get<{ data: FlowRun[]; total: number }>(
       `/api/flow/gates/${gateId}/runs`,
       {
         limit,
-        offset,
+        page,
         status: options.status,
       }
     );
@@ -236,11 +233,10 @@ export class FlowResource {
   ): Promise<{ data: FlowRun[]; meta: PaginationMeta }> {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
 
     const response = await this.http.get<{ data: FlowRun[]; total: number }>(
       '/api/flow/runs/active',
-      { limit, offset }
+      { limit, page }
     );
 
     const runs = response.data ?? (response as any).runs ?? [];
@@ -321,13 +317,12 @@ export class FlowResource {
   ): Promise<{ data: FlowApproval[]; meta: PaginationMeta }> {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
 
     const response = await this.http.get<{ data: FlowApproval[]; total: number }>(
       '/api/flow/approvals',
       {
         limit,
-        offset,
+        page,
         status: options.status,
       }
     );
@@ -428,11 +423,10 @@ export class FlowResource {
   ): Promise<{ data: FlowDelivery[]; meta: PaginationMeta }> {
     const limit = options.limit ?? 20;
     const page = options.page ?? 1;
-    const offset = (page - 1) * limit;
 
     const response = await this.http.get<{ data: FlowDelivery[]; total: number }>(
       `/api/flow/runs/${runId}/deliveries`,
-      { limit, offset }
+      { limit, page }
     );
 
     const deliveries = response.data ?? (response as any).deliveries ?? [];
