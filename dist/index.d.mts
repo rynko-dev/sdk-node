@@ -205,7 +205,7 @@ interface WebhookSubscription {
     createdAt: string;
     updatedAt: string;
 }
-type WebhookEventType = 'document.generated' | 'document.failed' | 'document.downloaded' | 'batch.completed';
+type WebhookEventType = 'document.generated' | 'document.failed' | 'document.downloaded' | 'batch.completed' | 'flow.run.completed' | 'flow.run.approved' | 'flow.run.rejected' | 'flow.run.review_required' | 'flow.delivery.failed';
 /** Data payload for document webhook events */
 interface DocumentWebhookData {
     /** Job ID */
@@ -246,7 +246,29 @@ interface BatchWebhookData {
     /** Custom metadata passed in the batch request */
     metadata?: Record<string, string | number | boolean | null>;
 }
-interface WebhookEvent<T = DocumentWebhookData | BatchWebhookData> {
+/** Data payload for Flow run webhook events */
+interface FlowRunWebhookData {
+    runId: string;
+    gateId: string;
+    gateName: string;
+    status: string;
+    input?: Record<string, unknown>;
+    output?: Record<string, unknown>;
+    errors?: Array<{
+        field?: string;
+        rule?: string;
+        message: string;
+    }>;
+    metadata?: Record<string, unknown>;
+}
+/** Data payload for Flow delivery webhook events */
+interface FlowDeliveryWebhookData {
+    deliveryId: string;
+    runId: string;
+    error: string;
+    attempts: number;
+}
+interface WebhookEvent<T = DocumentWebhookData | BatchWebhookData | FlowRunWebhookData | FlowDeliveryWebhookData> {
     id: string;
     type: WebhookEventType;
     timestamp: string;
@@ -1016,4 +1038,4 @@ declare class WebhookSignatureError extends Error {
     constructor(message: string);
 }
 
-export { type ApiError, type ApiResponse, type ApproveOptions, type BatchDocumentSpec, type BatchWebhookData, type DocumentJob, type DocumentJobStatus, type DocumentMetadata, type DocumentWebhookData, DocumentsResource, FLOW_RUN_TERMINAL_STATUSES, type FlowApproval, type FlowDelivery, type FlowGate, FlowResource, type FlowRun, type FlowRunStatus, type FlowValidationError, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListApprovalsOptions, type ListDeliveriesOptions, type ListDocumentJobsOptions, type ListGatesOptions, type ListRunsOptions, type ListTemplatesOptions, type MetadataValue, type PaginationMeta, type RejectOptions, type RetryConfig, Rynko, type RynkoConfig, RynkoError, type SubmitRunOptions, type SubmitRunResponse, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WaitForRunOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };
+export { type ApiError, type ApiResponse, type ApproveOptions, type BatchDocumentSpec, type BatchWebhookData, type DocumentJob, type DocumentJobStatus, type DocumentMetadata, type DocumentWebhookData, DocumentsResource, FLOW_RUN_TERMINAL_STATUSES, type FlowApproval, type FlowDelivery, type FlowDeliveryWebhookData, type FlowGate, FlowResource, type FlowRun, type FlowRunStatus, type FlowRunWebhookData, type FlowValidationError, type GenerateBatchOptions, type GenerateBatchResponse, type GenerateDocumentOptions, type GenerateDocumentResponse, type ListApprovalsOptions, type ListDeliveriesOptions, type ListDocumentJobsOptions, type ListGatesOptions, type ListRunsOptions, type ListTemplatesOptions, type MetadataValue, type PaginationMeta, type RejectOptions, type RetryConfig, Rynko, type RynkoConfig, RynkoError, type SubmitRunOptions, type SubmitRunResponse, type Template, type TemplateVariable, TemplatesResource, type User, type VerifyWebhookOptions, type WaitForRunOptions, type WebhookEvent, type WebhookEventType, WebhookSignatureError, type WebhookSubscription, WebhooksResource, computeSignature, createClient, parseSignatureHeader, verifyWebhookSignature };

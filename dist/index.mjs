@@ -443,9 +443,10 @@ var FlowResource = class {
    * ```
    */
   async submitRun(gateId, options) {
+    const { input, ...rest } = options;
     return this.http.post(
       `/api/flow/gates/${gateId}/runs`,
-      options
+      { payload: input, ...rest }
     );
   }
   /**

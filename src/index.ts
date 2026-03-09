@@ -84,6 +84,8 @@ export type {
   WebhookEvent,
   DocumentWebhookData,
   BatchWebhookData,
+  FlowRunWebhookData,
+  FlowDeliveryWebhookData,
   // Response types
   ApiResponse,
   PaginationMeta,

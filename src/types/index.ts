@@ -246,7 +246,12 @@ export type WebhookEventType =
   | 'document.generated'
   | 'document.failed'
   | 'document.downloaded'
-  | 'batch.completed';
+  | 'batch.completed'
+  | 'flow.run.completed'
+  | 'flow.run.approved'
+  | 'flow.run.rejected'
+  | 'flow.run.review_required'
+  | 'flow.delivery.failed';
 
 /** Data payload for document webhook events */
 export interface DocumentWebhookData {
@@ -290,7 +295,27 @@ export interface BatchWebhookData {
   metadata?: Record<string, string | number | boolean | null>;
 }
 
-export interface WebhookEvent<T = DocumentWebhookData | BatchWebhookData> {
+/** Data payload for Flow run webhook events */
+export interface FlowRunWebhookData {
+  runId: string;
+  gateId: string;
+  gateName: string;
+  status: string;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  errors?: Array<{ field?: string; rule?: string; message: string }>;
+  metadata?: Record<string, unknown>;
+}
+
+/** Data payload for Flow delivery webhook events */
+export interface FlowDeliveryWebhookData {
+  deliveryId: string;
+  runId: string;
+  error: string;
+  attempts: number;
+}
+
+export interface WebhookEvent<T = DocumentWebhookData | BatchWebhookData | FlowRunWebhookData | FlowDeliveryWebhookData> {
   id: string;
   type: WebhookEventType;
   timestamp: string;
